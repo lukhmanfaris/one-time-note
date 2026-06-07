@@ -126,3 +126,53 @@ describe("POST /api/auth/logout", () => {
     expect(res.status).toBe(200);
   });
 });
+
+describe("POST /api/auth/reset-request", () => {
+  it("returns success message even for non-existent email (prevents enumeration)", async () => {
+    const env = createTestEnv();
+    const res = await app.request("/api/auth/reset-request", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ email: "nonexistent@example.com" }),
+    }, env);
+
+    expect(res.status).toBe(200);
+    const body = await res.json();
+    expect(body.message).toContain("If an account");
+  });
+
+  it("rejects invalid email format", async () => {
+    const env = createTestEnv();
+    const res = await app.request("/api/auth/reset-request", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ email: "bad-email" }),
+    }, env);
+
+    expect(res.status).toBe(400);
+  });
+});
+
+describe("POST /api/auth/reset-confirm", () => {
+  it("rejects expired or invalid token", async () => {
+    const env = createTestEnv();
+    const res = await app.request("/api/auth/reset-confirm", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ token: "invalid-token", password: "NewSecure1" }),
+    }, env);
+
+    expect(res.status).toBe(410);
+  });
+
+  it("rejects short password", async () => {
+    const env = createTestEnv();
+    const res = await app.request("/api/auth/reset-confirm", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ token: "some-token", password: "short" }),
+    }, env);
+
+    expect(res.status).toBe(400);
+  });
+});

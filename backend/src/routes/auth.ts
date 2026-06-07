@@ -3,7 +3,9 @@ import { setCookie, deleteCookie } from "hono/cookie";
 import type { Env, AuthPayload, UserPublic } from "../types";
 import { UserDatabase } from "../database";
 import { authGuard } from "../auth-middleware";
-import { validateSignup, validateLogin } from "../middleware";
+import { validateSignup, validateLogin, validateResetRequest, validateResetConfirm } from "../middleware";
+import { sendPasswordResetEmail } from "../email";
+import { RESET_TOKEN_EXPIRY_SECONDS } from "../types";
 import { hashPassword, verifyPassword, signAccessToken, generateUserId, generateRefreshToken } from "../auth";
 import { verifyAccessToken } from "../auth";
 import { ACCESS_TOKEN_EXPIRY_SECONDS, REFRESH_TOKEN_EXPIRY_SECONDS } from "../types";
@@ -262,4 +264,71 @@ authRoutes.get("/me", authGuard(), async (c) => {
   };
 
   return c.json(userPublic);
+});
+
+authRoutes.post("/reset-request", async (c) => {
+  const body = await c.req.json();
+  const validation = validateResetRequest(body);
+
+  if (!validation.valid) {
+    return c.json({ error: { status: 400, code: "VALIDATION_ERROR", message: validation.error! } }, 400);
+  }
+
+  const { email } = body;
+  const userDb = new UserDatabase(c.env.DB);
+
+  const user = await userDb.findUserByEmail(email);
+
+  if (!user) {
+    return c.json({ message: "If an account with this email exists, a reset link has been sent." });
+  }
+
+  const resetToken = generateRefreshToken();
+
+  await c.env.RESET_KV.put(
+    `reset:${resetToken}`,
+    JSON.stringify({ userId: user.id, email: user.email, createdAt: Math.floor(Date.now() / 1000) }),
+    { expirationTtl: RESET_TOKEN_EXPIRY_SECONDS }
+  );
+
+  const frontendUrl = c.env.ENVIRONMENT === "development"
+    ? "http://localhost:3000"
+    : "https://revelio.app";
+
+  const emailResult = await sendPasswordResetEmail(user.email, resetToken, c.env.RESEND_API_KEY, frontendUrl);
+
+  if (!emailResult.success) {
+    console.error(`Password reset email failed for ${email}: ${emailResult.error}`);
+  }
+
+  return c.json({ message: "If an account with this email exists, a reset link has been sent." });
+});
+
+authRoutes.post("/reset-confirm", async (c) => {
+  const body = await c.req.json();
+  const validation = validateResetConfirm(body);
+
+  if (!validation.valid) {
+    return c.json({ error: { status: 400, code: "VALIDATION_ERROR", message: validation.error! } }, 400);
+  }
+
+  const { token, password } = body;
+
+  const stored = await c.env.RESET_KV.get(`reset:${token}`);
+  if (!stored) {
+    return c.json({ error: { status: 410, code: "EXPIRED", message: "Reset token has expired or is invalid" } }, 410);
+  }
+
+  const parsed = JSON.parse(stored);
+  const userId = parsed.userId as string;
+
+  await c.env.RESET_KV.delete(`reset:${token}`);
+
+  const passwordHash = await hashPassword(password);
+  const userDb = new UserDatabase(c.env.DB);
+  await userDb.updateUserPassword(userId, passwordHash);
+
+  await c.env.REFRESH_KV.delete(`refresh:${userId}`);
+
+  return c.json({ message: "Password has been reset successfully" });
 });
