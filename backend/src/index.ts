@@ -3,6 +3,7 @@ import { cors } from "hono/cors";
 import { logger } from "hono/logger";
 import { healthRoutes } from "./routes/health";
 import { noteRoutes } from "./routes/notes";
+import { authRoutes } from "./routes/auth";
 import type { Env } from "./types";
 
 const app = new Hono<{ Bindings: Env }>();
@@ -13,11 +14,13 @@ app.use(
   cors({
     origin: ["http://localhost:3000"],
     allowMethods: ["GET", "POST", "OPTIONS"],
-    allowHeaders: ["Content-Type"],
+    allowHeaders: ["Content-Type", "Authorization"],
+    allowCredentials: true,
   })
 );
 
 app.route("/api", healthRoutes);
 app.route("/api", noteRoutes);
+app.route("/api/auth", authRoutes);
 
 export default app;
