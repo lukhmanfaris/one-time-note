@@ -61,3 +61,37 @@ export function validateCreateNoteRequest(body: unknown): ValidationResult {
 
   return { valid: true };
 }
+
+interface RateLimitResult {
+  allowed: boolean;
+  retryAfter?: number;
+}
+
+interface RateLimiterOptions {
+  windowMs: number;
+  maxRequests: number;
+}
+
+export function rateLimiter(options: RateLimiterOptions): (key: string) => RateLimitResult {
+  const { windowMs, maxRequests } = options;
+  const hits = new Map<string, { count: number; windowStart: number }>();
+
+  return (key: string): RateLimitResult => {
+    const now = Date.now();
+    const record = hits.get(key);
+
+    if (!record || now - record.windowStart > windowMs) {
+      hits.set(key, { count: 1, windowStart: now });
+      return { allowed: true };
+    }
+
+    record.count++;
+
+    if (record.count > maxRequests) {
+      const retryAfter = Math.ceil((record.windowStart + windowMs - now) / 1000);
+      return { allowed: false, retryAfter: Math.max(1, retryAfter) };
+    }
+
+    return { allowed: true };
+  };
+}
