@@ -3,8 +3,9 @@ import { cors } from "hono/cors";
 import { logger } from "hono/logger";
 import { healthRoutes } from "./routes/health";
 import { noteRoutes } from "./routes/notes";
+import type { Env } from "./types";
 
-const app = new Hono();
+const app = new Hono<{ Bindings: Env }>();
 
 app.use("*", logger());
 app.use(

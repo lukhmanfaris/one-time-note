@@ -1,6 +1,7 @@
 import { Hono } from "hono";
+import type { Env } from "../types";
 
-export const healthRoutes = new Hono();
+export const healthRoutes = new Hono<{ Bindings: Env }>();
 
 healthRoutes.get("/health", (c) => {
   return c.json({ status: "ok", timestamp: new Date().toISOString() });
