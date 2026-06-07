@@ -1,4 +1,4 @@
-import { VALID_TTL_SECONDS, MAX_NOTE_SIZE_BYTES, ACCESS_KEY_LENGTH, ACCESS_KEY_CHARS } from "./types";
+import { VALID_TTL_SECONDS, MAX_NOTE_SIZE_BYTES, ACCESS_KEY_LENGTH, ACCESS_KEY_CHARS, PASSWORD_MIN_LENGTH, PASSWORD_MAX_LENGTH } from "./types";
 
 interface ValidationResult {
   valid: boolean;
@@ -94,4 +94,86 @@ export function rateLimiter(options: RateLimiterOptions): (key: string) => RateL
 
     return { allowed: true };
   };
+}
+
+const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+export function validateSignup(body: unknown): ValidationResult {
+  if (!body || typeof body !== "object") {
+    return { valid: false, error: "Request body must be a JSON object" };
+  }
+  const req = body as Record<string, unknown>;
+
+  if (!req.email || typeof req.email !== "string" || !EMAIL_REGEX.test(req.email)) {
+    return { valid: false, error: "A valid email address is required" };
+  }
+
+  if (!req.password || typeof req.password !== "string") {
+    return { valid: false, error: "Password is required" };
+  }
+
+  if (req.password.length < PASSWORD_MIN_LENGTH) {
+    return { valid: false, error: `Password must be at least ${PASSWORD_MIN_LENGTH} characters` };
+  }
+
+  if (req.password.length > PASSWORD_MAX_LENGTH) {
+    return { valid: false, error: `Password must be at most ${PASSWORD_MAX_LENGTH} characters` };
+  }
+
+  return { valid: true };
+}
+
+export function validateLogin(body: unknown): ValidationResult {
+  if (!body || typeof body !== "object") {
+    return { valid: false, error: "Request body must be a JSON object" };
+  }
+  const req = body as Record<string, unknown>;
+
+  if (!req.email || typeof req.email !== "string") {
+    return { valid: false, error: "Email is required" };
+  }
+
+  if (!req.password || typeof req.password !== "string") {
+    return { valid: false, error: "Password is required" };
+  }
+
+  return { valid: true };
+}
+
+export function validateResetRequest(body: unknown): ValidationResult {
+  if (!body || typeof body !== "object") {
+    return { valid: false, error: "Request body must be a JSON object" };
+  }
+  const req = body as Record<string, unknown>;
+
+  if (!req.email || typeof req.email !== "string" || !EMAIL_REGEX.test(req.email)) {
+    return { valid: false, error: "A valid email address is required" };
+  }
+
+  return { valid: true };
+}
+
+export function validateResetConfirm(body: unknown): ValidationResult {
+  if (!body || typeof body !== "object") {
+    return { valid: false, error: "Request body must be a JSON object" };
+  }
+  const req = body as Record<string, unknown>;
+
+  if (!req.token || typeof req.token !== "string") {
+    return { valid: false, error: "Reset token is required" };
+  }
+
+  if (!req.password || typeof req.password !== "string") {
+    return { valid: false, error: "New password is required" };
+  }
+
+  if (req.password.length < PASSWORD_MIN_LENGTH) {
+    return { valid: false, error: `Password must be at least ${PASSWORD_MIN_LENGTH} characters` };
+  }
+
+  if (req.password.length > PASSWORD_MAX_LENGTH) {
+    return { valid: false, error: `Password must be at most ${PASSWORD_MAX_LENGTH} characters` };
+  }
+
+  return { valid: true };
 }
