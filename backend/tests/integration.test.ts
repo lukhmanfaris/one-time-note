@@ -1,5 +1,9 @@
 import { describe, it, expect } from "vitest";
 import app from "../src/index";
+import { signAccessToken } from "../src/auth";
+import type { AuthPayload } from "../src/types";
+
+const TEST_SECRET = "test-secret-key-for-jwt-signing-minimum-32-chars";
 
 function createMockKV() {
   const store = new Map<string, { value: string; expiration?: number }>();
@@ -23,9 +27,32 @@ function createMockKV() {
   } as unknown as KVNamespace;
 }
 
+function createMockDB() {
+  return {
+    prepare: () => ({
+      bind: function (..._args: unknown[]) { return this; },
+      run: async () => ({ meta: { changes: 1 } }),
+      first: async () => null,
+      all: async () => ({ results: [] }),
+    }),
+  } as unknown as D1Database;
+}
+
+function createTestEnv() {
+  return {
+    NOTES_KV: createMockKV(),
+    REFRESH_KV: createMockKV(),
+    RESET_KV: createMockKV(),
+    DB: createMockDB(),
+    JWT_SECRET: TEST_SECRET,
+    ENVIRONMENT: "development",
+    RESEND_API_KEY: "test-key",
+  };
+}
+
 describe("Full note lifecycle", () => {
   it("creates a note, retrieves it, then retrieval fails (one-time read)", async () => {
-    const kv = createMockKV();
+    const env = createTestEnv();
 
     const createRes = await app.request(
       "/api/notes",
@@ -40,7 +67,7 @@ describe("Full note lifecycle", () => {
           access_key: "LfcyclTest1X",
         }),
       },
-      { NOTES_KV: kv }
+      env
     );
 
     expect(createRes.status).toBe(201);
@@ -48,33 +75,27 @@ describe("Full note lifecycle", () => {
     expect(createBody.access_key).toBe("LfcyclTest1X");
     expect(createBody.expires_at).toBeDefined();
 
-    const getRes = await app.request("/api/notes/LfcyclTest1X", undefined, {
-      NOTES_KV: kv,
-    });
+    const getRes = await app.request("/api/notes/LfcyclTest1X", undefined, env);
     expect(getRes.status).toBe(200);
     const getBody = await getRes.json();
     expect(getBody.ciphertext).toBe("dGVzdCBlbmNyeXB0ZWQgZGF0YQ==");
     expect(getBody.salt).toBe("dGVzdHNhbHQ=");
     expect(getBody.iv).toBe("dGVzdGl2ZWN0");
 
-    const secondGetRes = await app.request("/api/notes/LfcyclTest1X", undefined, {
-      NOTES_KV: kv,
-    });
+    const secondGetRes = await app.request("/api/notes/LfcyclTest1X", undefined, env);
     expect(secondGetRes.status).toBe(404);
   });
 
   it("returns 404 for non-existent key", async () => {
-    const kv = createMockKV();
-    const res = await app.request("/api/notes/NonExistKey1X", undefined, {
-      NOTES_KV: kv,
-    });
+    const env = createTestEnv();
+    const res = await app.request("/api/notes/NonExistKey1X", undefined, env);
     expect(res.status).toBe(404);
     const body = await res.json();
     expect(body.error.code).toBe("NOT_FOUND");
   });
 
   it("rejects create with invalid TTL", async () => {
-    const kv = createMockKV();
+    const env = createTestEnv();
     const res = await app.request(
       "/api/notes",
       {
@@ -85,11 +106,78 @@ describe("Full note lifecycle", () => {
           salt: "c2FsdA==",
           iv: "aXY=",
           ttl_seconds: 999,
-          access_key: "InvalidTTLTst1",
+          access_key: "InvalidTTLT1",
         }),
       },
-      { NOTES_KV: kv }
+      env
     );
     expect(res.status).toBe(400);
+  });
+});
+
+describe("Tier enforcement on note creation", () => {
+  it("allows anonymous user creating a note with 1h TTL", async () => {
+    const env = createTestEnv();
+
+    const res = await app.request("/api/notes", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        ciphertext: "aGVsbG8gd29ybGQ=",
+        salt: "c2FsdA==",
+        iv: "aXYxMjM0NTY3",
+        ttl_seconds: 3600,
+        access_key: "AnonNoteOK1X",
+      }),
+    }, env);
+
+    expect(res.status).toBe(201);
+  });
+
+  it("rejects anonymous user creating a note with 24h TTL", async () => {
+    const env = createTestEnv();
+
+    const res = await app.request("/api/notes", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        ciphertext: "aGVsbG8gd29ybGQ=",
+        salt: "c2FsdA==",
+        iv: "aXYxMjM0NTY3",
+        ttl_seconds: 86400,
+        access_key: "AnonNoteBd1X",
+      }),
+    }, env);
+
+    expect(res.status).toBe(403);
+    const body = await res.json();
+    expect(body.error.code).toBe("FORBIDDEN");
+  });
+
+  it("rejects free user creating a note with 24h TTL", async () => {
+    const env = createTestEnv();
+
+    const payload: AuthPayload = {
+      userId: "usr_free123456789",
+      email: "free@example.com",
+      tier: "free",
+      iat: Math.floor(Date.now() / 1000),
+      exp: Math.floor(Date.now() / 1000) + 900,
+    };
+    const token = await signAccessToken(payload, env.JWT_SECRET);
+
+    const res = await app.request("/api/notes", {
+      method: "POST",
+      headers: { "Content-Type": "application/json", Cookie: `__Host-access_token=${token}` },
+      body: JSON.stringify({
+        ciphertext: "aGVsbG8gd29ybGQ=",
+        salt: "c2FsdA==",
+        iv: "aXYxMjM0NTY3",
+        ttl_seconds: 86400,
+        access_key: "FreeUsrTTL1X",
+      }),
+    }, env);
+
+    expect(res.status).toBe(403);
   });
 });
