@@ -20,6 +20,12 @@ export function getErrorMessage(error: unknown): string {
         return error.message;
       case "RATE_LIMITED":
         return "Too many requests. Please try again later.";
+      case "UNAUTHORIZED":
+        return "Invalid email or password.";
+      case "CONFLICT":
+        return "An account with this email already exists.";
+      case "FORBIDDEN":
+        return error.message || "You don't have permission to perform this action.";
       default:
         return error.message;
     }
