@@ -1,0 +1,15 @@
+name = "revelio-api"
+main = "src/index.ts"
+compatibility_date = "2024-12-01"
+
+[[kv_namespaces]]
+binding = "NOTES_KV"
+id = "REPLACE_WITH_KV_ID"
+
+[[d1_databases]]
+binding = "DB"
+database_name = "revelio-db"
+database_id = "REPLACE_WITH_D1_ID"
+
+[vars]
+ENVIRONMENT = "development"
