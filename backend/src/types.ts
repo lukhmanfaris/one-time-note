@@ -34,3 +34,58 @@ export const MAX_NOTE_SIZE_BYTES = 10240;
 
 export const ACCESS_KEY_LENGTH = 12;
 export const ACCESS_KEY_CHARS = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
+
+export interface User {
+  id: string;
+  email: string;
+  password_hash: string;
+  tier: "free" | "pro" | "enterprise";
+  created_at: string;
+  updated_at: string;
+}
+
+export interface UserPublic {
+  id: string;
+  email: string;
+  tier: string;
+  created_at: string;
+  active_notes: number;
+}
+
+export interface SignupRequest {
+  email: string;
+  password: string;
+}
+
+export interface LoginRequest {
+  email: string;
+  password: string;
+}
+
+export interface ResetRequestRequest {
+  email: string;
+}
+
+export interface ResetConfirmRequest {
+  token: string;
+  password: string;
+}
+
+export interface AuthPayload {
+  userId: string;
+  email: string;
+  tier: string;
+  iat: number;
+  exp: number;
+}
+
+export const FREE_TTL_MAX = 3600;
+export const PRO_TTL_OPTIONS = [3600, 86400, 604800];
+export const FREE_MAX_ACTIVE_NOTES = 1;
+
+export const ACCESS_TOKEN_EXPIRY_SECONDS = 15 * 60;
+export const REFRESH_TOKEN_EXPIRY_SECONDS = 7 * 24 * 60 * 60;
+export const RESET_TOKEN_EXPIRY_SECONDS = 15 * 60;
+
+export const PASSWORD_MIN_LENGTH = 8;
+export const PASSWORD_MAX_LENGTH = 128;
