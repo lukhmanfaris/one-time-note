@@ -1,7 +1,11 @@
 export interface Env {
   NOTES_KV: KVNamespace;
+  REFRESH_KV: KVNamespace;
+  RESET_KV: KVNamespace;
   DB: D1Database;
   ENVIRONMENT: string;
+  JWT_SECRET: string;
+  RESEND_API_KEY: string;
 }
 
 export interface CreateNoteRequest {
