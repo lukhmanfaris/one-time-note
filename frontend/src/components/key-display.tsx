@@ -13,7 +13,7 @@ export function KeyDisplay({ accessKey, expiresLabel }: KeyDisplayProps) {
   };
 
   return (
-    <div className="space-y-3">
+    <div className="space-y-3 opacity-0 animate-scale-in mt-6">
       <div className="border rounded-lg p-6 text-center space-y-3">
         <Badge variant="secondary">ACCESS KEY — SHARE WITH RECIPIENT</Badge>
         <div className="font-mono text-4xl font-bold tracking-widest break-all select-all">
@@ -21,7 +21,7 @@ export function KeyDisplay({ accessKey, expiresLabel }: KeyDisplayProps) {
         </div>
         <button
           onClick={copyToClipboard}
-          className="text-sm text-muted-foreground hover:text-foreground underline"
+          className="text-sm text-muted-foreground hover:text-foreground underline transition-colors"
         >
           Copy to clipboard
         </button>

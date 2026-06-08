@@ -12,7 +12,7 @@ function escapeHtml(text: string): string {
 
 export function NoteReveal({ plaintext }: NoteRevealProps) {
   return (
-    <div className="space-y-3">
+    <div className="space-y-3 mt-6 opacity-0 animate-fade-in-up">
       <div className="border-l-2 border-destructive rounded-r-lg p-6 space-y-3">
         <div className="text-xs uppercase tracking-wider text-destructive font-mono">
           Decrypted Message — One-Time View
