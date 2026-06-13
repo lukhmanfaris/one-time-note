@@ -8,7 +8,7 @@ export function Navbar() {
           <div className="w-8 h-8 rounded-lg bg-black flex items-center justify-center">
             <span className="text-white font-ui font-bold text-sm">N</span>
           </div>
-          <span className="font-ui font-semibold text-sm tracking-tight">Note</span>
+          <span className="font-ui font-semibold text-sm tracking-tight">Revelio</span>
         </div>
 
         <div className="flex items-center gap-2">

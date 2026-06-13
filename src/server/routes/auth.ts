@@ -45,20 +45,16 @@ authRoutes.post("/signup", async (c) => {
   const { email, password } = body as { email: string; password: string };
 
   try {
-    console.error("[signup] step 1: init UserDatabase");
     const userDb = new UserDatabase(c.env.DB);
 
-    console.error("[signup] step 2: findUserByEmail");
     const existingUser = await userDb.findUserByEmail(email);
     if (existingUser) {
       return c.json({ error: { status: 409, code: "CONFLICT", message: "An account with this email already exists" } }, 409);
     }
 
-    console.error("[signup] step 3: hashPassword");
     const passwordHash = await hashPassword(password);
     const userId = generateUserId();
 
-    console.error("[signup] step 4: createUser");
     const user = await userDb.createUser({
       id: userId,
       email,
@@ -66,7 +62,6 @@ authRoutes.post("/signup", async (c) => {
       tier: "free",
     });
 
-    console.error("[signup] step 5: signAccessToken");
     const now = Math.floor(Date.now() / 1000);
     const payload: AuthPayload = {
       userId: user.id,
@@ -79,14 +74,12 @@ authRoutes.post("/signup", async (c) => {
     const accessToken = await signAccessToken(payload, c.env.JWT_SECRET);
     const refreshToken = generateRefreshToken();
 
-    console.error("[signup] step 6: REFRESH_KV.put");
     await c.env.REFRESH_KV.put(
       `refresh:${user.id}`,
       JSON.stringify({ token: refreshToken, createdAt: now }),
       { expirationTtl: REFRESH_TOKEN_EXPIRY_SECONDS }
     );
 
-    console.error("[signup] step 7: setCookies");
     setCookie(c, getAuthCookieName(c.env.ENVIRONMENT), accessToken, {
       httpOnly: true,
       secure: c.env.ENVIRONMENT === "production",
@@ -103,7 +96,6 @@ authRoutes.post("/signup", async (c) => {
       maxAge: REFRESH_TOKEN_EXPIRY_SECONDS,
     });
 
-    console.error("[signup] step 8: success");
     const userPublic: UserPublic = {
       id: user.id,
       email: user.email,
@@ -114,7 +106,7 @@ authRoutes.post("/signup", async (c) => {
 
     return c.json({ user: userPublic }, 201);
   } catch (err) {
-    console.error("DEBUG_STACK:", err);
+    console.error("Signup handler error:", err);
     return c.json(
       { error: { status: 500, code: "INTERNAL_ERROR", message: "Failed to create account" } },
       500
@@ -199,7 +191,7 @@ authRoutes.post("/login", async (c) => {
 
     return c.json({ user: userPublic });
   } catch (err) {
-    console.error("DEBUG_STACK:", err);
+    console.error("Auth handler error:", err);
     return c.json(
       { error: { status: 500, code: "INTERNAL_ERROR", message: "Failed to sign in" } },
       500
@@ -283,7 +275,7 @@ authRoutes.post("/refresh", async (c) => {
 
     return c.json({ user: { id: user.id, email: user.email, tier: user.tier } });
   } catch (err) {
-    console.error("DEBUG_STACK:", err);
+    console.error("Auth handler error:", err);
     return c.json(
       { error: { status: 500, code: "INTERNAL_ERROR", message: "Failed to refresh session" } },
       500
@@ -308,7 +300,7 @@ authRoutes.post("/logout", async (c) => {
 
     return c.json({ message: "Logged out successfully" });
   } catch (err) {
-    console.error("DEBUG_STACK:", err);
+    console.error("Auth handler error:", err);
     return c.json(
       { error: { status: 500, code: "INTERNAL_ERROR", message: "Failed to log out" } },
       500
@@ -338,7 +330,7 @@ authRoutes.get("/me", authGuard(), async (c) => {
 
     return c.json(userPublic);
   } catch (err) {
-    console.error("DEBUG_STACK:", err);
+    console.error("Auth handler error:", err);
     return c.json(
       { error: { status: 500, code: "INTERNAL_ERROR", message: "Failed to retrieve user profile" } },
       500
@@ -392,7 +384,7 @@ authRoutes.post("/reset-request", async (c) => {
 
     return c.json({ message: "If an account with this email exists, a reset link has been sent." });
   } catch (err) {
-    console.error("DEBUG_STACK:", err);
+    console.error("Auth handler error:", err);
     return c.json(
       { error: { status: 500, code: "INTERNAL_ERROR", message: "Failed to process reset request" } },
       500
@@ -437,7 +429,7 @@ authRoutes.post("/reset-confirm", async (c) => {
 
     return c.json({ message: "Password has been reset successfully" });
   } catch (err) {
-    console.error("DEBUG_STACK:", err);
+    console.error("Auth handler error:", err);
     return c.json(
       { error: { status: 500, code: "INTERNAL_ERROR", message: "Failed to reset password" } },
       500
