@@ -9,6 +9,15 @@ import type { Env } from "./types";
 const app = new Hono<{ Bindings: Env }>();
 
 app.use("*", logger());
+
+app.onError((err, c) => {
+  console.error("Unhandled error:", err.message, err.stack);
+  return c.json(
+    { error: { status: 500, code: "INTERNAL_ERROR", message: "Internal server error" } },
+    500
+  );
+});
+
 const allowedOrigins = [
   "http://localhost:3000",
   "http://localhost:8787",
