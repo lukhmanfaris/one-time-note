@@ -3,6 +3,7 @@ import { NoteStorage } from "../storage";
 import { NoteDatabase } from "../database";
 import { validateCreateNoteRequest } from "../middleware";
 import { verifyAccessToken } from "../auth";
+import { getAuthCookiePattern } from "../cookies";
 import { FREE_TTL_MAX, FREE_MAX_ACTIVE_NOTES } from "../types";
 import type { Env, AuthPayload } from "../types";
 
@@ -10,7 +11,7 @@ export const noteRoutes = new Hono<{ Bindings: Env; Variables: { user: AuthPaylo
 
 noteRoutes.use("/notes", async (c, next) => {
   const cookieHeader = c.req.header("Cookie") || "";
-  const match = cookieHeader.match(/__Host-access_token=([^;]+)/);
+  const match = cookieHeader.match(getAuthCookiePattern(c.env.ENVIRONMENT));
 
   if (match) {
     const payload = await verifyAccessToken(match[1], c.env.JWT_SECRET);

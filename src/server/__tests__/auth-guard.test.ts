@@ -27,17 +27,17 @@ function createAuthenticatedApp() {
 describe("authGuard", () => {
   it("returns 401 when no access token cookie is present", async () => {
     const app = createAuthenticatedApp();
-    const res = await app.request("/api/protected", {}, { JWT_SECRET: TEST_SECRET } as any);
+    const res = await app.request("/api/protected", {}, { JWT_SECRET: TEST_SECRET, ENVIRONMENT: "test" } as any);
     expect(res.status).toBe(401);
-    const body = await res.json();
+    const body = await res.json() as { error: { code: string } };
     expect(body.error.code).toBe("UNAUTHORIZED");
   });
 
   it("returns 401 when access token is invalid", async () => {
     const app = createAuthenticatedApp();
     const res = await app.request("/api/protected", {
-      headers: { Cookie: "__Host-access_token=invalid-token" },
-    }, { JWT_SECRET: TEST_SECRET } as any);
+      headers: { Cookie: "access_token=invalid-token" },
+    }, { JWT_SECRET: TEST_SECRET, ENVIRONMENT: "test" } as any);
     expect(res.status).toBe(401);
   });
 
@@ -53,11 +53,11 @@ describe("authGuard", () => {
     const token = await signAccessToken(payload, TEST_SECRET);
 
     const res = await app.request("/api/protected", {
-      headers: { Cookie: `__Host-access_token=${token}` },
-    }, { JWT_SECRET: TEST_SECRET } as any);
+      headers: { Cookie: `access_token=${token}` },
+    }, { JWT_SECRET: TEST_SECRET, ENVIRONMENT: "test" } as any);
 
     expect(res.status).toBe(200);
-    const body = await res.json();
+    const body = await res.json() as Record<string, unknown>;
     expect(body.userId).toBe("usr_abc123");
     expect(body.email).toBe("test@example.com");
   });
@@ -76,8 +76,8 @@ describe("requireTier", () => {
     const token = await signAccessToken(payload, TEST_SECRET);
 
     const res = await app.request("/api/pro-only", {
-      headers: { Cookie: `__Host-access_token=${token}` },
-    }, { JWT_SECRET: TEST_SECRET } as any);
+      headers: { Cookie: `access_token=${token}` },
+    }, { JWT_SECRET: TEST_SECRET, ENVIRONMENT: "test" } as any);
 
     expect(res.status).toBe(200);
   });
@@ -94,11 +94,11 @@ describe("requireTier", () => {
     const token = await signAccessToken(payload, TEST_SECRET);
 
     const res = await app.request("/api/pro-only", {
-      headers: { Cookie: `__Host-access_token=${token}` },
-    }, { JWT_SECRET: TEST_SECRET } as any);
+      headers: { Cookie: `access_token=${token}` },
+    }, { JWT_SECRET: TEST_SECRET, ENVIRONMENT: "test" } as any);
 
     expect(res.status).toBe(403);
-    const body = await res.json();
+    const body = await res.json() as { error: { code: string } };
     expect(body.error.code).toBe("FORBIDDEN");
   });
 });

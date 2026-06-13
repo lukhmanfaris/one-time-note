@@ -11,7 +11,13 @@
     "test:workers": "vitest run --config vitest.workers.config.mts",
     "test:watch": "vitest",
     "test:all": "vitest run && vitest run --config vitest.workers.config.mts",
-    "db:migrate": "wrangler d1 migrations apply revelio-db --local"
+    "db:migrate": "wrangler d1 migrations apply revelio-db --local",
+    "audit": "audit-ci --config audit-ci.json --high --skip-dev"
+  },
+  "overrides": {
+    "next": {
+      "postcss": "^8.5.15"
+    }
   },
   "dependencies": {
     "@base-ui/react": "^1.5.0",
@@ -36,6 +42,7 @@
     "@types/node": "^20",
     "@types/react": "^18",
     "@types/react-dom": "^18",
+    "audit-ci": "^7.1.0",
     "eslint": "^8",
     "eslint-config-next": "14.2.35",
     "jsdom": "^29.1.1",

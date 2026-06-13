@@ -9,6 +9,7 @@ import { RESET_TOKEN_EXPIRY_SECONDS } from "../types";
 import { hashPassword, verifyPassword, signAccessToken, generateUserId, generateRefreshToken } from "../auth";
 import { verifyAccessToken } from "../auth";
 import { ACCESS_TOKEN_EXPIRY_SECONDS, REFRESH_TOKEN_EXPIRY_SECONDS } from "../types";
+import { getAuthCookieName, getRefreshCookieName, getAuthCookiePattern, getRefreshCookiePattern } from "../cookies";
 
 export const authRoutes = new Hono<{ Bindings: Env; Variables: { user: AuthPayload } }>();
 
@@ -56,17 +57,17 @@ authRoutes.post("/signup", async (c) => {
     { expirationTtl: REFRESH_TOKEN_EXPIRY_SECONDS }
   );
 
-  setCookie(c, "__Host-access_token", accessToken, {
+  setCookie(c, getAuthCookieName(c.env.ENVIRONMENT), accessToken, {
     httpOnly: true,
-    secure: true,
+    secure: c.env.ENVIRONMENT === "production",
     sameSite: "Strict",
     path: "/",
     maxAge: ACCESS_TOKEN_EXPIRY_SECONDS,
   });
 
-  setCookie(c, "__Host-refresh_token", refreshToken, {
+  setCookie(c, getRefreshCookieName(c.env.ENVIRONMENT), refreshToken, {
     httpOnly: true,
-    secure: true,
+    secure: c.env.ENVIRONMENT === "production",
     sameSite: "Strict",
     path: "/",
     maxAge: REFRESH_TOKEN_EXPIRY_SECONDS,
@@ -122,17 +123,17 @@ authRoutes.post("/login", async (c) => {
     { expirationTtl: REFRESH_TOKEN_EXPIRY_SECONDS }
   );
 
-  setCookie(c, "__Host-access_token", accessToken, {
+  setCookie(c, getAuthCookieName(c.env.ENVIRONMENT), accessToken, {
     httpOnly: true,
-    secure: true,
+    secure: c.env.ENVIRONMENT === "production",
     sameSite: "Strict",
     path: "/",
     maxAge: ACCESS_TOKEN_EXPIRY_SECONDS,
   });
 
-  setCookie(c, "__Host-refresh_token", refreshToken, {
+  setCookie(c, getRefreshCookieName(c.env.ENVIRONMENT), refreshToken, {
     httpOnly: true,
-    secure: true,
+    secure: c.env.ENVIRONMENT === "production",
     sameSite: "Strict",
     path: "/",
     maxAge: REFRESH_TOKEN_EXPIRY_SECONDS,
@@ -153,8 +154,8 @@ authRoutes.post("/login", async (c) => {
 
 authRoutes.post("/refresh", async (c) => {
   const cookieHeader = c.req.header("Cookie") || "";
-  const refreshMatch = cookieHeader.match(/__Host-refresh_token=([^;]+)/);
-  const accessMatch = cookieHeader.match(/__Host-access_token=([^;]+)/);
+  const refreshMatch = cookieHeader.match(getRefreshCookiePattern(c.env.ENVIRONMENT));
+  const accessMatch = cookieHeader.match(getAuthCookiePattern(c.env.ENVIRONMENT));
 
   if (!refreshMatch) {
     return c.json({ error: { status: 401, code: "UNAUTHORIZED", message: "Refresh token is required" } }, 401);
@@ -208,17 +209,17 @@ authRoutes.post("/refresh", async (c) => {
     { expirationTtl: REFRESH_TOKEN_EXPIRY_SECONDS }
   );
 
-  setCookie(c, "__Host-access_token", newAccessToken, {
+  setCookie(c, getAuthCookieName(c.env.ENVIRONMENT), newAccessToken, {
     httpOnly: true,
-    secure: true,
+    secure: c.env.ENVIRONMENT === "production",
     sameSite: "Strict",
     path: "/",
     maxAge: ACCESS_TOKEN_EXPIRY_SECONDS,
   });
 
-  setCookie(c, "__Host-refresh_token", newRefreshToken, {
+  setCookie(c, getRefreshCookieName(c.env.ENVIRONMENT), newRefreshToken, {
     httpOnly: true,
-    secure: true,
+    secure: c.env.ENVIRONMENT === "production",
     sameSite: "Strict",
     path: "/",
     maxAge: REFRESH_TOKEN_EXPIRY_SECONDS,
@@ -229,7 +230,7 @@ authRoutes.post("/refresh", async (c) => {
 
 authRoutes.post("/logout", async (c) => {
   const cookieHeader = c.req.header("Cookie") || "";
-  const accessMatch = cookieHeader.match(/__Host-access_token=([^;]+)/);
+  const accessMatch = cookieHeader.match(getAuthCookiePattern(c.env.ENVIRONMENT));
 
   if (accessMatch) {
     const payload = await verifyAccessToken(accessMatch[1], c.env.JWT_SECRET);
@@ -238,8 +239,8 @@ authRoutes.post("/logout", async (c) => {
     }
   }
 
-  deleteCookie(c, "__Host-access_token", { path: "/", secure: true });
-  deleteCookie(c, "__Host-refresh_token", { path: "/", secure: true });
+  deleteCookie(c, getAuthCookieName(c.env.ENVIRONMENT), { path: "/", secure: c.env.ENVIRONMENT === "production" });
+  deleteCookie(c, getRefreshCookieName(c.env.ENVIRONMENT), { path: "/", secure: c.env.ENVIRONMENT === "production" });
 
   return c.json({ message: "Logged out successfully" });
 });

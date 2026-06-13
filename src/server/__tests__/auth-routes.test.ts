@@ -53,7 +53,7 @@ const createTestEnv = () => ({
   RESET_KV: mockKV(),
   DB: mockD1(),
   JWT_SECRET: "test-secret-key-for-jwt-signing-minimum-32-chars",
-  ENVIRONMENT: "development",
+  ENVIRONMENT: "test",
   RESEND_API_KEY: "test-key",
 });
 
@@ -67,7 +67,7 @@ describe("POST /api/auth/signup", () => {
     }, env);
 
     expect(res.status).toBe(201);
-    const body = await res.json();
+    const body = await res.json() as { user: { email: string; tier: string } };
     expect(body.user).toBeDefined();
     expect(body.user.email).toBe("test@example.com");
     expect(body.user.tier).toBe("free");
@@ -137,7 +137,7 @@ describe("POST /api/auth/reset-request", () => {
     }, env);
 
     expect(res.status).toBe(200);
-    const body = await res.json();
+    const body = await res.json() as Record<string, unknown>;
     expect(body.message).toContain("If an account");
   });
 

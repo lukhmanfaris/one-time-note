@@ -8,7 +8,7 @@ id = "b1e67ec8062f4b0baf93bc99eb035406"
 
 [[kv_namespaces]]
 binding = "REFRESH_KV"
-id = "3744363cf35b40b965f9d2c1e6a6932"
+id = "3744363cf35b409b965f9d2c1e6a6932"
 
 [[kv_namespaces]]
 binding = "RESET_KV"
@@ -22,5 +22,3 @@ migrations_dir = "migrations"
 
 [vars]
 ENVIRONMENT = "development"
-JWT_SECRET = "H7CmHtSM+J4NTyncnzqguQP81Uommv2yZPW5+U/hpXQ="
-RESEND_API_KEY = "re_RUUmQnxn_3GqvAQwWgmrzSJ4ZTYa2ohwe"

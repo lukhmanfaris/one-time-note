@@ -42,7 +42,7 @@ describe("POST /api/notes", () => {
       { NOTES_KV: kv }
     );
     expect(res.status).toBe(201);
-    const body = await res.json();
+    const body = await res.json() as Record<string, unknown>;
     expect(body.access_key).toBe("aB3xK9mQwP2n");
     expect(body.expires_at).toBeDefined();
   });
@@ -116,7 +116,7 @@ describe("GET /api/health", () => {
   it("returns ok", async () => {
     const res = await app.request("/api/health");
     expect(res.status).toBe(200);
-    const body = await res.json();
+    const body = await res.json() as Record<string, unknown>;
     expect(body.status).toBe("ok");
   });
 });

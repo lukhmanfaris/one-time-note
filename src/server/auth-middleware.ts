@@ -1,11 +1,12 @@
 import type { Context, Next } from "hono";
 import type { Env, AuthPayload } from "./types";
 import { verifyAccessToken } from "./auth";
+import { getAuthCookiePattern } from "./cookies";
 
 export function authGuard() {
   return async (c: Context<{ Bindings: Env; Variables: { user: AuthPayload } }>, next: Next) => {
     const cookieHeader = c.req.header("Cookie") || "";
-    const match = cookieHeader.match(/__Host-access_token=([^;]+)/);
+    const match = cookieHeader.match(getAuthCookiePattern(c.env.ENVIRONMENT));
 
     if (!match) {
       return c.json({ error: { status: 401, code: "UNAUTHORIZED", message: "Access token is required" } }, 401);

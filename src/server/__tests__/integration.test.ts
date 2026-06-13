@@ -45,7 +45,7 @@ function createTestEnv() {
     RESET_KV: createMockKV(),
     DB: createMockDB(),
     JWT_SECRET: TEST_SECRET,
-    ENVIRONMENT: "development",
+    ENVIRONMENT: "test",
     RESEND_API_KEY: "test-key",
   };
 }
@@ -71,13 +71,13 @@ describe("Full note lifecycle", () => {
     );
 
     expect(createRes.status).toBe(201);
-    const createBody = await createRes.json();
+    const createBody = (await createRes.json()) as Record<string, unknown>;
     expect(createBody.access_key).toBe("LfcyclTest1X");
     expect(createBody.expires_at).toBeDefined();
 
     const getRes = await app.request("/api/notes/LfcyclTest1X", undefined, env);
     expect(getRes.status).toBe(200);
-    const getBody = await getRes.json();
+    const getBody = (await getRes.json()) as Record<string, unknown>;
     expect(getBody.ciphertext).toBe("dGVzdCBlbmNyeXB0ZWQgZGF0YQ==");
     expect(getBody.salt).toBe("dGVzdHNhbHQ=");
     expect(getBody.iv).toBe("dGVzdGl2ZWN0");
@@ -90,7 +90,7 @@ describe("Full note lifecycle", () => {
     const env = createTestEnv();
     const res = await app.request("/api/notes/NonExistKey1X", undefined, env);
     expect(res.status).toBe(404);
-    const body = await res.json();
+    const body = await res.json() as { error: { code: string } };
     expect(body.error.code).toBe("NOT_FOUND");
   });
 
@@ -150,7 +150,7 @@ describe("Tier enforcement on note creation", () => {
     }, env);
 
     expect(res.status).toBe(403);
-    const body = await res.json();
+    const body = await res.json() as { error: { code: string } };
     expect(body.error.code).toBe("FORBIDDEN");
   });
 
@@ -168,7 +168,7 @@ describe("Tier enforcement on note creation", () => {
 
     const res = await app.request("/api/notes", {
       method: "POST",
-      headers: { "Content-Type": "application/json", Cookie: `__Host-access_token=${token}` },
+      headers: { "Content-Type": "application/json", Cookie: `access_token=${token}` },
       body: JSON.stringify({
         ciphertext: "aGVsbG8gd29ybGQ=",
         salt: "c2FsdA==",

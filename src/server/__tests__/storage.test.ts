@@ -8,7 +8,7 @@ describe("NoteStorage", () => {
   beforeEach(() => {
     const store = new Map<string, { value: string; expiration?: number }>();
     kv = {
-      async put(key: string, value: string, options?: KVPutOptions) {
+      async put(key: string, value: string, options?: { expirationTtl?: number }) {
         const ttl = (options as any)?.expirationTtl;
         store.set(key, { value, expiration: ttl ? Math.floor(Date.now() / 1000) + ttl : undefined });
       },

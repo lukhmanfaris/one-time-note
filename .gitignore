@@ -5,6 +5,7 @@ node_modules/
 .next/
 dist/
 out/
+*.tsbuildinfo
 
 # Cloudflare
 .wrangler/
@@ -13,6 +14,7 @@ out/
 .env
 .env.local
 .env.*.local
+.dev.vars
 
 # Python (legacy, may be removed)
 venv/
