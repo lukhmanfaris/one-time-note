@@ -1,0 +1,219 @@
+@import "tailwindcss";
+@import "tw-animate-css";
+
+@theme inline {
+  --font-sans: var(--font-urbanist), ui-sans-serif, system-ui, sans-serif;
+  --font-mono: var(--font-open-sans), ui-sans-serif, system-ui, sans-serif;
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+}
+
+:root {
+  --radius: 0.625rem;
+  --background: #fafaf9;
+  --foreground: #000000;
+  --card: rgba(255, 255, 255, 0.65);
+  --card-foreground: #000000;
+  --popover: rgba(255, 255, 255, 0.65);
+  --popover-foreground: #000000;
+  --primary: #000000;
+  --primary-foreground: #ffffff;
+  --secondary: rgba(255, 255, 255, 0.5);
+  --secondary-foreground: #000000;
+  --muted: rgba(0, 0, 0, 0.03);
+  --muted-foreground: rgba(0, 0, 0, 0.4);
+  --accent: rgba(0, 0, 0, 0.03);
+  --accent-foreground: #000000;
+  --destructive: rgba(0, 0, 0, 0.08);
+  --border: rgba(0, 0, 0, 0.04);
+  --input: rgba(0, 0, 0, 0.06);
+  --ring: rgba(0, 0, 0, 0.08);
+}
+
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
+  body {
+    @apply bg-background text-foreground;
+    overflow-x: hidden;
+  }
+}
+
+/* Glass Panel */
+.glass {
+  background: rgba(255, 255, 255, 0.65);
+  border: 1px solid rgba(0, 0, 0, 0.04);
+  backdrop-filter: blur(24px) saturate(1.2);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.03);
+}
+
+.glass-hover {
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.glass-hover:hover {
+  background: rgba(255, 255, 255, 0.80);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+}
+
+/* Input Glass */
+.input-glass {
+  background: rgba(255, 255, 255, 0.5);
+  border: 1px solid rgba(0, 0, 0, 0.06);
+  backdrop-filter: blur(12px);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.input-glass:focus {
+  border-color: #000000;
+  box-shadow: 0 0 0 3px rgba(0, 0, 0, 0.08);
+  outline: none;
+}
+
+/* Button Styles */
+.btn-black {
+  background: #000000;
+  color: #ffffff;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.btn-black:hover {
+  background: #1a1a1a;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+}
+
+.btn-ghost {
+  background: transparent;
+  color: #000000;
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.btn-ghost:hover {
+  background: rgba(0, 0, 0, 0.03);
+}
+
+.btn-outline {
+  background: transparent;
+  color: #000000;
+  border: 1px solid rgba(0, 0, 0, 0.12);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.btn-outline:hover {
+  background: rgba(0, 0, 0, 0.05);
+}
+
+/* Grid Pattern Background */
+.grid-pattern {
+  background-image: 
+    linear-gradient(rgba(0, 0, 0, 0.015) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(0, 0, 0, 0.015) 1px, transparent 1px);
+  background-size: 48px 48px;
+}
+
+/* Ambient Orb */
+.ambient-orb {
+  position: absolute;
+  border-radius: 50%;
+  filter: blur(100px);
+  pointer-events: none;
+  opacity: 0.2;
+}
+
+/* Transition */
+.transition-smooth {
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Font Utilities */
+.font-ui {
+  font-family: var(--font-urbanist), sans-serif;
+}
+
+.font-mono {
+  font-family: var(--font-open-sans), sans-serif;
+  letter-spacing: 0.05em;
+}
+
+/* Section Spacing */
+.section {
+  padding: 3rem 0;
+}
+
+.section-sm {
+  padding: 1.5rem 0;
+}
+
+/* Status Dot */
+.status-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #000000;
+}
+
+/* Key Glow */
+.key-glow {
+  box-shadow: 0 0 20px rgba(0, 0, 0, 0.06);
+}
+
+/* Text Colors */
+.text-primary {
+  color: #000000;
+}
+
+.text-secondary {
+  color: rgba(0, 0, 0, 0.6);
+}
+
+.text-muted {
+  color: rgba(0, 0, 0, 0.4);
+}
+
+.text-faint {
+  color: rgba(0, 0, 0, 0.3);
+}
+
+.text-ghost {
+  color: rgba(0, 0, 0, 0.2);
+}
+
+/* Floating Navbar */
+.floating-nav {
+  background: rgba(255, 255, 255, 0.75);
+  border: 1px solid rgba(0, 0, 0, 0.05);
+  backdrop-filter: blur(24px) saturate(1.2);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.04);
+}
+
+/* Max Width */
+.max-w-content {
+  max-width: 1152px;
+}
+
+.max-w-narrow {
+  max-width: 896px;
+}
