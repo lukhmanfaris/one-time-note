@@ -13,7 +13,7 @@ const TEST_JWT_SECRET = "test-secret-key-for-jwt-signing-minimum-32-chars";
 describe("hashPassword / verifyPassword", () => {
   it("hashes a password and verifies it correctly", async () => {
     const hash = await hashPassword("MySecureP@ss123");
-    expect(hash).toMatch(/^\$pbkdf2-sha256\$i=600000\$/);
+    expect(hash).toMatch(/^\$pbkdf2-sha256\$i=100000\$/);
     expect(hash).not.toBe("MySecureP@ss123");
 
     const isValid = await verifyPassword("MySecureP@ss123", hash);

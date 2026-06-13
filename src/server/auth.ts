@@ -1,6 +1,6 @@
 import type { AuthPayload } from "./types";
 
-const PBKDF2_ITERATIONS = 600000;
+const PBKDF2_ITERATIONS = 100000;
 const SALT_LENGTH = 16;
 const HASH_LENGTH = 32;
 const USER_ID_BYTES = 24;
