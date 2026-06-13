@@ -14,11 +14,23 @@ import { getAuthCookieName, getRefreshCookieName, getAuthCookiePattern, getRefre
 export const authRoutes = new Hono<{ Bindings: Env; Variables: { user: AuthPayload } }>();
 
 authRoutes.post("/signup", async (c) => {
+  const missingBindings: string[] = [];
+  if (!c.env.DB) missingBindings.push("DB");
+  if (!c.env.JWT_SECRET) missingBindings.push("JWT_SECRET");
+  if (!c.env.REFRESH_KV) missingBindings.push("REFRESH_KV");
+  if (!c.env.ENVIRONMENT) missingBindings.push("ENVIRONMENT");
+  if (missingBindings.length > 0) {
+    console.error("Missing config:", missingBindings.join(", "));
+    return c.json(
+      { error: { status: 500, code: "CONFIG_ERROR", message: `Missing config: ${missingBindings.join(", ")}` } },
+      500
+    );
+  }
+
   let body: unknown;
   try {
     body = await c.req.json();
-  } catch (err) {
-    console.error("Signup JSON parse error:", err);
+  } catch (_err) {
     return c.json(
       { error: { status: 400, code: "BAD_REQUEST", message: "Invalid JSON in request body" } },
       400
@@ -94,7 +106,7 @@ authRoutes.post("/signup", async (c) => {
 
     return c.json({ user: userPublic }, 201);
   } catch (err) {
-    console.error("Signup handler error:", err instanceof Error ? err.message : String(err), err);
+    console.error("DEBUG_STACK:", err);
     return c.json(
       { error: { status: 500, code: "INTERNAL_ERROR", message: "Failed to create account" } },
       500
@@ -106,8 +118,7 @@ authRoutes.post("/login", async (c) => {
   let body: unknown;
   try {
     body = await c.req.json();
-  } catch (err) {
-    console.error("Login JSON parse error:", err);
+  } catch (_err) {
     return c.json(
       { error: { status: 400, code: "BAD_REQUEST", message: "Invalid JSON in request body" } },
       400
@@ -180,7 +191,7 @@ authRoutes.post("/login", async (c) => {
 
     return c.json({ user: userPublic });
   } catch (err) {
-    console.error("Login handler error:", err instanceof Error ? err.message : String(err), err);
+    console.error("DEBUG_STACK:", err);
     return c.json(
       { error: { status: 500, code: "INTERNAL_ERROR", message: "Failed to sign in" } },
       500
@@ -264,7 +275,7 @@ authRoutes.post("/refresh", async (c) => {
 
     return c.json({ user: { id: user.id, email: user.email, tier: user.tier } });
   } catch (err) {
-    console.error("Refresh handler error:", err instanceof Error ? err.message : String(err), err);
+    console.error("DEBUG_STACK:", err);
     return c.json(
       { error: { status: 500, code: "INTERNAL_ERROR", message: "Failed to refresh session" } },
       500
@@ -289,7 +300,7 @@ authRoutes.post("/logout", async (c) => {
 
     return c.json({ message: "Logged out successfully" });
   } catch (err) {
-    console.error("Logout handler error:", err instanceof Error ? err.message : String(err), err);
+    console.error("DEBUG_STACK:", err);
     return c.json(
       { error: { status: 500, code: "INTERNAL_ERROR", message: "Failed to log out" } },
       500
@@ -319,7 +330,7 @@ authRoutes.get("/me", authGuard(), async (c) => {
 
     return c.json(userPublic);
   } catch (err) {
-    console.error("Get /me error:", err instanceof Error ? err.message : String(err), err);
+    console.error("DEBUG_STACK:", err);
     return c.json(
       { error: { status: 500, code: "INTERNAL_ERROR", message: "Failed to retrieve user profile" } },
       500
@@ -331,8 +342,7 @@ authRoutes.post("/reset-request", async (c) => {
   let body: unknown;
   try {
     body = await c.req.json();
-  } catch (err) {
-    console.error("Reset-request JSON parse error:", err);
+  } catch (_err) {
     return c.json(
       { error: { status: 400, code: "BAD_REQUEST", message: "Invalid JSON in request body" } },
       400
@@ -374,7 +384,7 @@ authRoutes.post("/reset-request", async (c) => {
 
     return c.json({ message: "If an account with this email exists, a reset link has been sent." });
   } catch (err) {
-    console.error("Reset-request handler error:", err instanceof Error ? err.message : String(err), err);
+    console.error("DEBUG_STACK:", err);
     return c.json(
       { error: { status: 500, code: "INTERNAL_ERROR", message: "Failed to process reset request" } },
       500
@@ -386,8 +396,7 @@ authRoutes.post("/reset-confirm", async (c) => {
   let body: unknown;
   try {
     body = await c.req.json();
-  } catch (err) {
-    console.error("Reset-confirm JSON parse error:", err);
+  } catch (_err) {
     return c.json(
       { error: { status: 400, code: "BAD_REQUEST", message: "Invalid JSON in request body" } },
       400
@@ -420,7 +429,7 @@ authRoutes.post("/reset-confirm", async (c) => {
 
     return c.json({ message: "Password has been reset successfully" });
   } catch (err) {
-    console.error("Reset-confirm handler error:", err instanceof Error ? err.message : String(err), err);
+    console.error("DEBUG_STACK:", err);
     return c.json(
       { error: { status: 500, code: "INTERNAL_ERROR", message: "Failed to reset password" } },
       500
