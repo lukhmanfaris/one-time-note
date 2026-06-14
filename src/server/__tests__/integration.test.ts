@@ -49,6 +49,7 @@ function createTestEnv() {
     ENVIRONMENT: "test",
     RESEND_API_KEY: "test-key",
     TURNSTILE_SECRET_KEY: "test-bypass",
+    CRON_SECRET: "test-cron-secret",
   };
 }
 

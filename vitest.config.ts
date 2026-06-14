@@ -33,6 +33,7 @@ export default defineConfig({
             "src/server/__tests__/auth-routes.test.ts",
             "src/server/__tests__/notes.test.ts",
             "src/server/__tests__/integration.test.ts",
+            "src/server/__tests__/cron.test.ts",
           ],
           environment: "node",
         },

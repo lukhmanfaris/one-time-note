@@ -1,0 +1,16 @@
+name: Sweep Expired Notes
+
+on:
+  schedule:
+    - cron: '*/15 * * * *'
+
+jobs:
+  sweep:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Trigger cron sweep
+        run: |
+          curl -f -X POST \
+            -H "Authorization: Bearer ${{ secrets.CRON_SECRET }}" \
+            "https://revelio-47h.pages.dev/api/cron/sweep"

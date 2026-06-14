@@ -7,6 +7,7 @@ export interface Env {
   JWT_SECRET: string;
   RESEND_API_KEY: string;
   TURNSTILE_SECRET_KEY: string;
+  CRON_SECRET: string;
 }
 
 export interface CreateNoteRequest {
