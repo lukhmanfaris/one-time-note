@@ -9,8 +9,8 @@ export interface EncryptedNote {
   iv: string;
 }
 
-function arrayBufferToBase64(buffer: ArrayBuffer): string {
-  const bytes = new Uint8Array(buffer);
+function arrayBufferToBase64(source: Uint8Array | ArrayBuffer): string {
+  const bytes = source instanceof Uint8Array ? source : new Uint8Array(source);
   let binary = "";
   for (const byte of bytes) {
     binary += String.fromCharCode(byte);
@@ -24,7 +24,7 @@ function base64ToArrayBuffer(base64: string): ArrayBuffer {
   for (let i = 0; i < binary.length; i++) {
     bytes[i] = binary.charCodeAt(i);
   }
-  return bytes.buffer.slice(bytes.byteOffset, bytes.byteOffset + bytes.byteLength);
+  return bytes.buffer;
 }
 
 function arrayBufferToHex(buffer: ArrayBuffer): string {
@@ -51,7 +51,7 @@ export async function deriveLookupId(encryptionKey: string): Promise<string> {
     bytes[i] = binary.charCodeAt(i);
   }
 
-  const hashBuffer = await crypto.subtle.digest("SHA-256", bytes.buffer.slice(bytes.byteOffset, bytes.byteOffset + bytes.byteLength));
+  const hashBuffer = await crypto.subtle.digest("SHA-256", bytes as BufferSource);
   return arrayBufferToHex(hashBuffer);
 }
 
@@ -64,7 +64,7 @@ async function deriveKey(encryptionKey: string, salt: Uint8Array): Promise<Crypt
 
   const keyMaterial = await crypto.subtle.importKey(
     "raw",
-    keyBytes.buffer.slice(keyBytes.byteOffset, keyBytes.byteOffset + keyBytes.byteLength),
+    keyBytes,
     "PBKDF2",
     false,
     ["deriveKey"]
@@ -73,7 +73,7 @@ async function deriveKey(encryptionKey: string, salt: Uint8Array): Promise<Crypt
   return crypto.subtle.deriveKey(
     {
       name: "PBKDF2",
-      salt: salt.buffer.slice(salt.byteOffset, salt.byteOffset + salt.byteLength) as ArrayBuffer,
+      salt: salt as BufferSource,
       iterations: PBKDF2_ITERATIONS,
       hash: "SHA-256",
     },
@@ -93,15 +93,15 @@ export async function encryptNote(plaintext: string, encryptionKey: string): Pro
 
   const key = await deriveKey(encryptionKey, salt);
   const encrypted = await crypto.subtle.encrypt(
-    { name: "AES-GCM", iv: iv.buffer.slice(iv.byteOffset, iv.byteOffset + iv.byteLength) },
+    { name: "AES-GCM", iv: iv },
     key,
     encoder.encode(plaintext)
   );
 
   return {
     ciphertext: arrayBufferToBase64(encrypted),
-    salt: arrayBufferToBase64(salt.buffer.slice(salt.byteOffset, salt.byteOffset + salt.byteLength)),
-    iv: arrayBufferToBase64(iv.buffer.slice(iv.byteOffset, iv.byteOffset + iv.byteLength)),
+    salt: arrayBufferToBase64(salt),
+    iv: arrayBufferToBase64(iv),
   };
 }
 
@@ -112,7 +112,7 @@ export async function decryptNote(encrypted: EncryptedNote, encryptionKey: strin
 
   const key = await deriveKey(encryptionKey, salt);
   const decrypted = await crypto.subtle.decrypt(
-    { name: "AES-GCM", iv: iv.buffer.slice(iv.byteOffset, iv.byteOffset + iv.byteLength) },
+    { name: "AES-GCM", iv: iv },
     key,
     ciphertext
   );
