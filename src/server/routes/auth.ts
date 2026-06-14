@@ -1,16 +1,23 @@
 import { Hono } from "hono";
 import { setCookie, deleteCookie } from "hono/cookie";
-import type { Env, AuthPayload, UserPublic } from "../types";
+import type { Env, AuthPayload, UserPublic, SessionPublic } from "../types";
 import { UserDatabase } from "../database";
 import { authGuard } from "../auth-middleware";
 import { validateSignup, validateLogin, validateResetRequest, validateResetConfirm } from "../middleware";
 import { sendPasswordResetEmail } from "../email";
 import { verifyTurnstile } from "../turnstile";
-import { RESET_TOKEN_EXPIRY_SECONDS } from "../types";
-import { hashPassword, verifyPassword, signAccessToken, generateUserId, generateRefreshToken } from "../auth";
-import { verifyAccessToken } from "../auth";
-import { ACCESS_TOKEN_EXPIRY_SECONDS, REFRESH_TOKEN_EXPIRY_SECONDS } from "../types";
+import { RESET_TOKEN_EXPIRY_SECONDS, ACCESS_TOKEN_EXPIRY_SECONDS, REFRESH_TOKEN_EXPIRY_SECONDS } from "../types";
+import { hashPassword, verifyPassword, signAccessToken, verifyAccessToken, generateUserId, generateRefreshToken } from "../auth";
 import { getAuthCookieName, getRefreshCookieName, getAuthCookiePattern, getRefreshCookiePattern } from "../cookies";
+import {
+  createSession,
+  findSessionByToken,
+  updateSessionActivity,
+  deleteSessionById,
+  deleteAllSessionsExcept,
+  rotateSessionToken,
+  getClientIp,
+} from "../sessions";
 
 export const authRoutes = new Hono<{ Bindings: Env; Variables: { user: AuthPayload } }>();
 
@@ -69,22 +76,21 @@ authRoutes.post("/signup", async (c) => {
     });
 
     const now = Math.floor(Date.now() / 1000);
+    const refreshToken = generateRefreshToken();
+    const ip = getClientIp(c);
+    const userAgent = c.req.header("User-Agent") || "";
+    const sessionId = await createSession(c.env.REFRESH_KV, user.id, refreshToken, ip, userAgent || "", now);
+
     const payload: AuthPayload = {
       userId: user.id,
       email: user.email,
       tier: user.tier,
+      sessionId,
       iat: now,
       exp: now + ACCESS_TOKEN_EXPIRY_SECONDS,
     };
 
     const accessToken = await signAccessToken(payload, c.env.JWT_SECRET);
-    const refreshToken = generateRefreshToken();
-
-    await c.env.REFRESH_KV.put(
-      `refresh:${user.id}`,
-      JSON.stringify({ token: refreshToken, createdAt: now }),
-      { expirationTtl: REFRESH_TOKEN_EXPIRY_SECONDS }
-    );
 
     setCookie(c, getAuthCookieName(c.env.ENVIRONMENT), accessToken, {
       httpOnly: true,
@@ -157,22 +163,21 @@ authRoutes.post("/login", async (c) => {
     }
 
     const now = Math.floor(Date.now() / 1000);
+    const refreshToken = generateRefreshToken();
+    const ip = getClientIp(c);
+    const userAgent = c.req.header("User-Agent") || "";
+    const sessionId = await createSession(c.env.REFRESH_KV, user.id, refreshToken, ip, userAgent, now);
+
     const payload: AuthPayload = {
       userId: user.id,
       email: user.email,
       tier: user.tier,
+      sessionId,
       iat: now,
       exp: now + ACCESS_TOKEN_EXPIRY_SECONDS,
     };
 
     const accessToken = await signAccessToken(payload, c.env.JWT_SECRET);
-    const refreshToken = generateRefreshToken();
-
-    await c.env.REFRESH_KV.put(
-      `refresh:${user.id}`,
-      JSON.stringify({ token: refreshToken, createdAt: now }),
-      { expirationTtl: REFRESH_TOKEN_EXPIRY_SECONDS }
-    );
 
     setCookie(c, getAuthCookieName(c.env.ENVIRONMENT), accessToken, {
       httpOnly: true,
@@ -234,14 +239,9 @@ authRoutes.post("/refresh", async (c) => {
       return c.json({ error: { status: 401, code: "UNAUTHORIZED", message: "Invalid or expired session" } }, 401);
     }
 
-    const stored = await c.env.REFRESH_KV.get(`refresh:${userId}`);
-    if (!stored) {
+    const session = await findSessionByToken(c.env.REFRESH_KV, userId, refreshTokenValue);
+    if (!session) {
       return c.json({ error: { status: 401, code: "UNAUTHORIZED", message: "Refresh token not found or expired" } }, 401);
-    }
-
-    const parsed = JSON.parse(stored);
-    if (parsed.token !== refreshTokenValue) {
-      return c.json({ error: { status: 401, code: "UNAUTHORIZED", message: "Invalid refresh token" } }, 401);
     }
 
     const userDb = new UserDatabase(c.env.DB);
@@ -251,22 +251,20 @@ authRoutes.post("/refresh", async (c) => {
     }
 
     const now = Math.floor(Date.now() / 1000);
+    const newRefreshToken = generateRefreshToken();
+
+    await rotateSessionToken(c.env.REFRESH_KV, userId, session.sessionId, newRefreshToken, now);
+
     const newPayload: AuthPayload = {
       userId: user.id,
       email: user.email,
       tier: user.tier,
+      sessionId: session.sessionId,
       iat: now,
       exp: now + ACCESS_TOKEN_EXPIRY_SECONDS,
     };
 
     const newAccessToken = await signAccessToken(newPayload, c.env.JWT_SECRET);
-    const newRefreshToken = generateRefreshToken();
-
-    await c.env.REFRESH_KV.put(
-      `refresh:${user.id}`,
-      JSON.stringify({ token: newRefreshToken, createdAt: now }),
-      { expirationTtl: REFRESH_TOKEN_EXPIRY_SECONDS }
-    );
 
     setCookie(c, getAuthCookieName(c.env.ENVIRONMENT), newAccessToken, {
       httpOnly: true,
@@ -302,7 +300,7 @@ authRoutes.post("/logout", async (c) => {
     if (accessMatch) {
       const payload = await verifyAccessToken(accessMatch[1], c.env.JWT_SECRET);
       if (payload) {
-        await c.env.REFRESH_KV.delete(`refresh:${payload.userId}`);
+        await deleteSessionById(c.env.REFRESH_KV, payload.userId, payload.sessionId);
       }
     }
 
@@ -344,6 +342,84 @@ authRoutes.get("/me", authGuard(), async (c) => {
     console.error("Auth handler error:", err);
     return c.json(
       { error: { status: 500, code: "INTERNAL_ERROR", message: "Failed to retrieve user profile" } },
+      500
+    );
+  }
+});
+
+authRoutes.get("/sessions", authGuard(), async (c) => {
+  try {
+    const userPayload = c.get("user");
+    const prefix = `session:${userPayload.userId}:`;
+    const list = await c.env.REFRESH_KV.list({ prefix });
+    const currentSessionId = userPayload.sessionId;
+
+    const sessions: SessionPublic[] = [];
+    for (const key of list.keys) {
+      const raw = await c.env.REFRESH_KV.get(key.name);
+      if (!raw) continue;
+      try {
+        const data = JSON.parse(raw);
+        const sessionId = key.name.slice(prefix.length);
+        sessions.push({
+          id: sessionId,
+          browser: data.browser || "Unknown",
+          os: data.os || "Unknown",
+          ip: data.ip || "unknown",
+          createdAt: new Date(data.createdAt * 1000).toISOString(),
+          lastActive: new Date(data.lastActive * 1000).toISOString(),
+          current: sessionId === currentSessionId,
+        });
+      } catch {
+        continue;
+      }
+    }
+
+    sessions.sort((a, b) => b.lastActive.localeCompare(a.lastActive));
+
+    return c.json({ sessions });
+  } catch (err) {
+    console.error("Get sessions error:", err);
+    return c.json(
+      { error: { status: 500, code: "INTERNAL_ERROR", message: "Failed to retrieve sessions" } },
+      500
+    );
+  }
+});
+
+authRoutes.delete("/sessions/:sessionId", authGuard(), async (c) => {
+  try {
+    const userPayload = c.get("user");
+    const sessionId = c.req.param("sessionId") || "";
+
+    if (sessionId === userPayload.sessionId) {
+      return c.json({ error: { status: 400, code: "BAD_REQUEST", message: "Cannot revoke your current session. Use logout instead." } }, 400);
+    }
+
+    const deleted = await deleteSessionById(c.env.REFRESH_KV, userPayload.userId, sessionId);
+    if (!deleted) {
+      return c.json({ error: { status: 404, code: "NOT_FOUND", message: "Session not found" } }, 404);
+    }
+
+    return c.json({ message: "Session revoked successfully" });
+  } catch (err) {
+    console.error("Revoke session error:", err);
+    return c.json(
+      { error: { status: 500, code: "INTERNAL_ERROR", message: "Failed to revoke session" } },
+      500
+    );
+  }
+});
+
+authRoutes.delete("/sessions", authGuard(), async (c) => {
+  try {
+    const userPayload = c.get("user");
+    const deletedCount = await deleteAllSessionsExcept(c.env.REFRESH_KV, userPayload.userId, userPayload.sessionId);
+    return c.json({ message: `Signed out of ${deletedCount} other device(s)`, deleted: deletedCount });
+  } catch (err) {
+    console.error("Revoke all sessions error:", err);
+    return c.json(
+      { error: { status: 500, code: "INTERNAL_ERROR", message: "Failed to revoke other sessions" } },
       500
     );
   }
@@ -436,7 +512,11 @@ authRoutes.post("/reset-confirm", async (c) => {
     const userDb = new UserDatabase(c.env.DB);
     await userDb.updateUserPassword(userId, passwordHash);
 
-    await c.env.REFRESH_KV.delete(`refresh:${userId}`);
+    const prefix = `session:${userId}:`;
+    const list = await c.env.REFRESH_KV.list({ prefix });
+    for (const key of list.keys) {
+      await c.env.REFRESH_KV.delete(key.name);
+    }
 
     return c.json({ message: "Password has been reset successfully" });
   } catch (err) {

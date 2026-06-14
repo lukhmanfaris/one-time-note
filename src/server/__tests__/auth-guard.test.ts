@@ -47,6 +47,7 @@ describe("authGuard", () => {
       userId: "usr_abc123",
       email: "test@example.com",
       tier: "free",
+      sessionId: "sess_abc123",
       iat: Math.floor(Date.now() / 1000),
       exp: Math.floor(Date.now() / 1000) + 900,
     };
@@ -70,6 +71,7 @@ describe("requireTier", () => {
       userId: "usr_pro123",
       email: "pro@example.com",
       tier: "pro",
+      sessionId: "sess_pro123",
       iat: Math.floor(Date.now() / 1000),
       exp: Math.floor(Date.now() / 1000) + 900,
     };
@@ -88,6 +90,7 @@ describe("requireTier", () => {
       userId: "usr_free123",
       email: "free@example.com",
       tier: "free",
+      sessionId: "sess_free123",
       iat: Math.floor(Date.now() / 1000),
       exp: Math.floor(Date.now() / 1000) + 900,
     };

@@ -174,3 +174,54 @@ export async function confirmPasswordReset(token: string, password: string): Pro
     throw new ApiErrorClass(res.status, err.error?.code || "UNKNOWN", err.error?.message || "Password reset failed");
   }
 }
+
+export interface SessionInfo {
+  id: string;
+  browser: string;
+  os: string;
+  ip: string;
+  createdAt: string;
+  lastActive: string;
+  current: boolean;
+}
+
+export async function getSessions(): Promise<SessionInfo[]> {
+  const res = await fetch(`${API_URL}/api/auth/sessions`, {
+    credentials: "include",
+  });
+
+  if (!res.ok) {
+    const err: ApiError = await res.json();
+    throw new ApiErrorClass(res.status, err.error?.code || "UNKNOWN", err.error?.message || "Failed to fetch sessions");
+  }
+
+  const data: { sessions: SessionInfo[] } = await res.json();
+  return data.sessions;
+}
+
+export async function revokeSession(sessionId: string): Promise<void> {
+  const res = await fetch(`${API_URL}/api/auth/sessions/${sessionId}`, {
+    method: "DELETE",
+    credentials: "include",
+  });
+
+  if (!res.ok) {
+    const err: ApiError = await res.json();
+    throw new ApiErrorClass(res.status, err.error?.code || "UNKNOWN", err.error?.message || "Failed to revoke session");
+  }
+}
+
+export async function revokeAllOtherSessions(): Promise<number> {
+  const res = await fetch(`${API_URL}/api/auth/sessions`, {
+    method: "DELETE",
+    credentials: "include",
+  });
+
+  if (!res.ok) {
+    const err: ApiError = await res.json();
+    throw new ApiErrorClass(res.status, err.error?.code || "UNKNOWN", err.error?.message || "Failed to revoke sessions");
+  }
+
+  const data: { deleted: number } = await res.json();
+  return data.deleted;
+}

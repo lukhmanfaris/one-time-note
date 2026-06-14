@@ -39,6 +39,7 @@ describe("signAccessToken / verifyAccessToken", () => {
       userId: "usr_abc123",
       email: "test@example.com",
       tier: "free",
+      sessionId: "sess_test1",
       iat: Math.floor(Date.now() / 1000),
       exp: Math.floor(Date.now() / 1000) + 900,
     };
@@ -58,6 +59,7 @@ describe("signAccessToken / verifyAccessToken", () => {
       userId: "usr_abc123",
       email: "test@example.com",
       tier: "free",
+      sessionId: "sess_test2",
       iat: Math.floor(Date.now() / 1000),
       exp: Math.floor(Date.now() / 1000) + 900,
     };
@@ -72,6 +74,7 @@ describe("signAccessToken / verifyAccessToken", () => {
       userId: "usr_abc123",
       email: "test@example.com",
       tier: "free",
+      sessionId: "sess_test3",
       iat: Math.floor(Date.now() / 1000) - 3600,
       exp: Math.floor(Date.now() / 1000) - 1800,
     };

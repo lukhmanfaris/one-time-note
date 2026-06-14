@@ -172,6 +172,7 @@ describe("Tier enforcement on note creation", () => {
       userId: "usr_free123456789",
       email: "free@example.com",
       tier: "free",
+      sessionId: "sess_free_test",
       iat: Math.floor(Date.now() / 1000),
       exp: Math.floor(Date.now() / 1000) + 900,
     };

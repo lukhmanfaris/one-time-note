@@ -83,6 +83,7 @@ export interface AuthPayload {
   userId: string;
   email: string;
   tier: string;
+  sessionId: string;
   iat: number;
   exp: number;
 }
@@ -97,3 +98,30 @@ export const RESET_TOKEN_EXPIRY_SECONDS = 15 * 60;
 
 export const PASSWORD_MIN_LENGTH = 8;
 export const PASSWORD_MAX_LENGTH = 128;
+
+export interface SessionData {
+  token: string;
+  ip: string;
+  browser: string;
+  os: string;
+  createdAt: number;
+  lastActive: number;
+}
+
+export interface SessionPublic {
+  id: string;
+  browser: string;
+  os: string;
+  ip: string;
+  createdAt: string;
+  lastActive: string;
+  current: boolean;
+}
+
+export function sessionKey(userId: string, sessionId: string): string {
+  return `session:${userId}:${sessionId}`;
+}
+
+export function sessionPrefix(userId: string): string {
+  return `session:${userId}:`;
+}

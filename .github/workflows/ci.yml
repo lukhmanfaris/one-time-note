@@ -30,12 +30,12 @@ jobs:
 
       # Uncomment to enable Cloudflare Pages deployment on pushes to main.
       # Requires GitHub secrets: CLOUDFLARE_ACCOUNT_ID and CLOUDFLARE_API_TOKEN.
-      # - name: Deploy to Cloudflare Pages
-      #   if: github.ref == 'refs/heads/main'
-      #   uses: cloudflare/pages-action@v1
-      #   with:
-      #     apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
-      #     accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
-      #     projectName: revelio
-      #     directory: dist
-      #     gitHubToken: ${{ secrets.GITHUB_TOKEN }}
+- name: Deploy to Cloudflare Pages
+        if: github.ref == 'refs/heads/main'
+        uses: cloudflare/pages-action@v1
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          projectName: revelio
+          directory: dist
+          gitHubToken: ${{ secrets.GITHUB_TOKEN }}
