@@ -2,15 +2,28 @@ import { describe, it, expect } from "vitest";
 import { validateCreateNoteRequest } from "../middleware";
 
 describe("validateCreateNoteRequest", () => {
-  it("accepts a valid request", () => {
+  it("accepts a valid request with turnstileToken", () => {
     const result = validateCreateNoteRequest({
       ciphertext: "aGVsbG8=",
       salt: "c2FsdA==",
       iv: "aXY=",
       ttl_seconds: 3600,
-      access_key: "aB3xK9mQwP2n",
+      lookup_id: "a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2",
+      turnstileToken: "test-token",
     });
     expect(result.valid).toBe(true);
+  });
+
+  it("rejects missing turnstileToken", () => {
+    const result = validateCreateNoteRequest({
+      ciphertext: "aGVsbG8=",
+      salt: "c2FsdA==",
+      iv: "aXY=",
+      ttl_seconds: 3600,
+      lookup_id: "a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2",
+    });
+    expect(result.valid).toBe(false);
+    expect(result.error).toContain("turnstileToken");
   });
 
   it("rejects missing ciphertext", () => {
@@ -18,7 +31,8 @@ describe("validateCreateNoteRequest", () => {
       salt: "c2FsdA==",
       iv: "aXY=",
       ttl_seconds: 3600,
-      access_key: "aB3xK9mQwP2n",
+      lookup_id: "a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2",
+      turnstileToken: "test-token",
     } as any);
     expect(result.valid).toBe(false);
     expect(result.error).toContain("ciphertext");
@@ -30,34 +44,37 @@ describe("validateCreateNoteRequest", () => {
       salt: "c2FsdA==",
       iv: "aXY=",
       ttl_seconds: 999,
-      access_key: "aB3xK9mQwP2n",
+      lookup_id: "a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2",
+      turnstileToken: "test-token",
     });
     expect(result.valid).toBe(false);
     expect(result.error).toContain("ttl_seconds");
   });
 
-  it("rejects access key shorter than 12 characters", () => {
+  it("rejects lookup_id shorter than 64 characters", () => {
     const result = validateCreateNoteRequest({
       ciphertext: "aGVsbG8=",
       salt: "c2FsdA==",
       iv: "aXY=",
       ttl_seconds: 3600,
-      access_key: "short",
+      lookup_id: "short",
+      turnstileToken: "test-token",
     });
     expect(result.valid).toBe(false);
-    expect(result.error).toContain("access_key");
+    expect(result.error).toContain("lookup_id");
   });
 
-  it("rejects access key with non-alphanumeric characters", () => {
+  it("rejects lookup_id with non-hex characters", () => {
     const result = validateCreateNoteRequest({
       ciphertext: "aGVsbG8=",
       salt: "c2FsdA==",
       iv: "aXY=",
       ttl_seconds: 3600,
-      access_key: "aB3xK9mQwP2!",
+      lookup_id: "g1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6g1b2",
+      turnstileToken: "test-token",
     });
     expect(result.valid).toBe(false);
-    expect(result.error).toContain("access_key");
+    expect(result.error).toContain("lookup_id");
   });
 
   it("rejects ciphertext exceeding max size", () => {
@@ -66,7 +83,8 @@ describe("validateCreateNoteRequest", () => {
       salt: "c2FsdA==",
       iv: "aXY=",
       ttl_seconds: 3600,
-      access_key: "aB3xK9mQwP2n",
+      lookup_id: "a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2",
+      turnstileToken: "test-token",
     });
     expect(result.valid).toBe(false);
     expect(result.error).toContain("size");
@@ -78,7 +96,8 @@ describe("validateCreateNoteRequest", () => {
       salt: "c2FsdA==",
       iv: "aXY=",
       ttl_seconds: 3600,
-      access_key: "aB3xK9mQwP2n",
+      lookup_id: "a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2",
+      turnstileToken: "test-token",
     });
     expect(result.valid).toBe(false);
     expect(result.error).toContain("ciphertext");

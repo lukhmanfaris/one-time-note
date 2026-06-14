@@ -1,11 +1,10 @@
-import { VALID_TTL_SECONDS, MAX_NOTE_SIZE_BYTES, ACCESS_KEY_LENGTH, ACCESS_KEY_CHARS, PASSWORD_MIN_LENGTH, PASSWORD_MAX_LENGTH, type ValidTTL } from "./types";
+import { VALID_TTL_SECONDS, MAX_NOTE_SIZE_BYTES, LOOKUP_ID_REGEX, PASSWORD_MIN_LENGTH, PASSWORD_MAX_LENGTH, type ValidTTL } from "./types";
 
 interface ValidationResult {
   valid: boolean;
   error?: string;
 }
 
-const ACCESS_KEY_REGEX = new RegExp(`^[${ACCESS_KEY_CHARS}]{${ACCESS_KEY_LENGTH}}$`);
 const BASE64_REGEX = /^[A-Za-z0-9+/]*={0,2}$/;
 
 export function validateCreateNoteRequest(body: unknown): ValidationResult {
@@ -35,12 +34,16 @@ export function validateCreateNoteRequest(body: unknown): ValidationResult {
     return { valid: false, error: "ttl_seconds must be one of: 3600, 86400, 604800" };
   }
 
-  if (!req.access_key || typeof req.access_key !== "string") {
-    return { valid: false, error: "access_key is required and must be a string" };
+  if (!req.lookup_id || typeof req.lookup_id !== "string") {
+    return { valid: false, error: "lookup_id is required and must be a string" };
   }
 
-  if (!ACCESS_KEY_REGEX.test(req.access_key)) {
-    return { valid: false, error: `access_key must be exactly ${ACCESS_KEY_LENGTH} alphanumeric characters` };
+  if (!LOOKUP_ID_REGEX.test(req.lookup_id)) {
+    return { valid: false, error: "lookup_id must be exactly 64 hex characters (SHA-256)" };
+  }
+
+  if (!req.turnstileToken || typeof req.turnstileToken !== "string") {
+    return { valid: false, error: "turnstileToken is required" };
   }
 
   if (req.ciphertext.length > MAX_NOTE_SIZE_BYTES) {
@@ -120,6 +123,10 @@ export function validateSignup(body: unknown): ValidationResult {
     return { valid: false, error: `Password must be at most ${PASSWORD_MAX_LENGTH} characters` };
   }
 
+  if (!req.turnstileToken || typeof req.turnstileToken !== "string") {
+    return { valid: false, error: "turnstileToken is required" };
+  }
+
   return { valid: true };
 }
 
@@ -135,6 +142,10 @@ export function validateLogin(body: unknown): ValidationResult {
 
   if (!req.password || typeof req.password !== "string") {
     return { valid: false, error: "Password is required" };
+  }
+
+  if (!req.turnstileToken || typeof req.turnstileToken !== "string") {
+    return { valid: false, error: "turnstileToken is required" };
   }
 
   return { valid: true };

@@ -1,21 +1,12 @@
 const PBKDF2_ITERATIONS = 260000;
 const SALT_LENGTH = 16;
 const IV_LENGTH = 12;
-const ACCESS_KEY_LENGTH = 12;
-const ACCESS_KEY_CHARS = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
+const ENCRYPTION_KEY_BYTES = 32;
 
 export interface EncryptedNote {
   ciphertext: string;
   salt: string;
   iv: string;
-}
-
-export function generateAccessKey(): string {
-  const array = new Uint8Array(ACCESS_KEY_LENGTH);
-  crypto.getRandomValues(array);
-  return Array.from(array)
-    .map((byte) => ACCESS_KEY_CHARS[byte % ACCESS_KEY_CHARS.length])
-    .join("");
 }
 
 function arrayBufferToBase64(buffer: ArrayBuffer): string {
@@ -36,11 +27,44 @@ function base64ToArrayBuffer(base64: string): ArrayBuffer {
   return bytes.buffer;
 }
 
-async function deriveKey(accessKey: string, salt: Uint8Array): Promise<CryptoKey> {
-  const encoder = new TextEncoder();
+function arrayBufferToHex(buffer: ArrayBuffer): string {
+  const bytes = new Uint8Array(buffer);
+  return Array.from(bytes)
+    .map((b) => b.toString(16).padStart(2, "0"))
+    .join("");
+}
+
+export function generateEncryptionKey(): string {
+  const bytes = new Uint8Array(ENCRYPTION_KEY_BYTES);
+  crypto.getRandomValues(bytes);
+  let binary = "";
+  for (const byte of bytes) {
+    binary += String.fromCharCode(byte);
+  }
+  return btoa(binary).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
+}
+
+export async function deriveLookupId(encryptionKey: string): Promise<string> {
+  let binary = atob(encryptionKey.replace(/-/g, "+").replace(/_/g, "/"));
+  const bytes = new Uint8Array(binary.length);
+  for (let i = 0; i < binary.length; i++) {
+    bytes[i] = binary.charCodeAt(i);
+  }
+
+  const hashBuffer = await crypto.subtle.digest("SHA-256", bytes.buffer as ArrayBuffer);
+  return arrayBufferToHex(hashBuffer);
+}
+
+async function deriveKey(encryptionKey: string, salt: Uint8Array): Promise<CryptoKey> {
+  const binary = atob(encryptionKey.replace(/-/g, "+").replace(/_/g, "/"));
+  const keyBytes = new Uint8Array(binary.length);
+  for (let i = 0; i < binary.length; i++) {
+    keyBytes[i] = binary.charCodeAt(i);
+  }
+
   const keyMaterial = await crypto.subtle.importKey(
     "raw",
-    encoder.encode(accessKey),
+    keyBytes.buffer as ArrayBuffer,
     "PBKDF2",
     false,
     ["deriveKey"]
@@ -60,14 +84,14 @@ async function deriveKey(accessKey: string, salt: Uint8Array): Promise<CryptoKey
   );
 }
 
-export async function encryptNote(plaintext: string, accessKey: string): Promise<EncryptedNote> {
+export async function encryptNote(plaintext: string, encryptionKey: string): Promise<EncryptedNote> {
   const encoder = new TextEncoder();
   const salt = new Uint8Array(SALT_LENGTH);
   const iv = new Uint8Array(IV_LENGTH);
   crypto.getRandomValues(salt);
   crypto.getRandomValues(iv);
 
-  const key = await deriveKey(accessKey, salt);
+  const key = await deriveKey(encryptionKey, salt);
   const encrypted = await crypto.subtle.encrypt(
     { name: "AES-GCM", iv: iv.buffer as ArrayBuffer },
     key,
@@ -81,12 +105,12 @@ export async function encryptNote(plaintext: string, accessKey: string): Promise
   };
 }
 
-export async function decryptNote(encrypted: EncryptedNote, accessKey: string): Promise<string> {
+export async function decryptNote(encrypted: EncryptedNote, encryptionKey: string): Promise<string> {
   const salt = new Uint8Array(base64ToArrayBuffer(encrypted.salt));
   const iv = new Uint8Array(base64ToArrayBuffer(encrypted.iv));
   const ciphertext = base64ToArrayBuffer(encrypted.ciphertext);
 
-  const key = await deriveKey(accessKey, salt);
+  const key = await deriveKey(encryptionKey, salt);
   const decrypted = await crypto.subtle.decrypt(
     { name: "AES-GCM", iv: iv.buffer as ArrayBuffer },
     key,
@@ -95,4 +119,25 @@ export async function decryptNote(encrypted: EncryptedNote, accessKey: string): 
 
   const decoder = new TextDecoder();
   return decoder.decode(decrypted);
+}
+
+export function buildShareUrl(lookupId: string, encryptionKey: string): string {
+  const base = typeof window !== "undefined" ? window.location.origin : "";
+  return `${base}/receive/${lookupId}#key=${encodeURIComponent(encryptionKey)}`;
+}
+
+export function parseShareUrl(): { lookupId: string; encryptionKey: string } | null {
+  if (typeof window === "undefined") return null;
+
+  const hash = window.location.hash;
+  if (!hash || !hash.startsWith("#key=")) return null;
+
+  const encryptionKey = decodeURIComponent(hash.slice(5));
+  if (!encryptionKey) return null;
+
+  const pathParts = window.location.pathname.split("/");
+  const lookupId = pathParts[pathParts.length - 1];
+  if (!lookupId) return null;
+
+  return { lookupId, encryptionKey };
 }

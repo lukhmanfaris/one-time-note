@@ -83,7 +83,7 @@ export function InteractiveDemo() {
             <div className="glass rounded-2xl p-6 border border-black/5 key-glow">
               <div className="flex items-center justify-between mb-2">
                 <div className="font-mono text-xs tracking-widest uppercase text-black/40">
-                  Access Key
+                  Share Link
                 </div>
                 <span className="font-mono text-xs tracking-wider text-black/30">Copied</span>
               </div>

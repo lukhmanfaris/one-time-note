@@ -4,6 +4,7 @@ import { logger } from "hono/logger";
 import { healthRoutes } from "./routes/health";
 import { noteRoutes } from "./routes/notes";
 import { authRoutes } from "./routes/auth";
+import { NoteDatabase } from "./database";
 import type { Env } from "./types";
 
 const app = new Hono<{ Bindings: Env }>();
@@ -21,6 +22,7 @@ app.onError((err, c) => {
 const allowedOrigins = [
   "http://localhost:3000",
   "http://localhost:8787",
+  "http://localhost:8788",
   "https://revelio.app",
 ];
 
@@ -43,4 +45,12 @@ app.route("/api", healthRoutes);
 app.route("/api", noteRoutes);
 app.route("/api/auth", authRoutes);
 
-export default app;
+export { app };
+
+const scheduled = async (event: ScheduledEvent, env: Env, ctx: ExecutionContext) => {
+  const noteDb = new NoteDatabase(env.DB);
+  const deleted = await noteDb.deleteExpiredNotes();
+  console.log(`[cron] Swept ${deleted} expired/claimed notes from D1`);
+};
+
+export default { fetch: app.fetch, scheduled };

@@ -4,7 +4,7 @@ import { ApiError as ApiErrorClass } from "./api-errors";
 const API_URL = process.env.NEXT_PUBLIC_API_URL || "";
 
 export interface CreateNoteResponse {
-  access_key: string;
+  lookup_id: string;
   expires_at: string;
 }
 
@@ -19,19 +19,26 @@ export interface ApiError {
 export async function createNote(
   encrypted: EncryptedNote,
   ttlSeconds: number,
-  accessKey: string
+  lookupId: string,
+  turnstileToken: string
 ): Promise<CreateNoteResponse> {
-  const res = await fetch(`${API_URL}/api/notes`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({
-      ciphertext: encrypted.ciphertext,
-      salt: encrypted.salt,
-      iv: encrypted.iv,
-      ttl_seconds: ttlSeconds,
-      access_key: accessKey,
-    }),
-  });
+  let res: Response;
+  try {
+    res = await fetch(`${API_URL}/api/notes`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        ciphertext: encrypted.ciphertext,
+        salt: encrypted.salt,
+        iv: encrypted.iv,
+        ttl_seconds: ttlSeconds,
+        lookup_id: lookupId,
+        turnstileToken: turnstileToken,
+      }),
+    });
+  } catch {
+    throw new Error("Unable to reach the server. Check your internet connection.");
+  }
 
   if (!res.ok) {
     const err: ApiError = await res.json();
@@ -41,8 +48,13 @@ export async function createNote(
   return res.json();
 }
 
-export async function retrieveNote(accessKey: string): Promise<EncryptedNote | null> {
-  const res = await fetch(`${API_URL}/api/notes/${accessKey}`);
+export async function retrieveNote(lookupId: string): Promise<EncryptedNote | null> {
+  let res: Response;
+  try {
+    res = await fetch(`${API_URL}/api/notes/${lookupId}`);
+  } catch {
+    throw new Error("Unable to reach the server. Check your internet connection.");
+  }
 
   if (res.status === 404) return null;
   if (res.status === 410) return null;
@@ -76,12 +88,12 @@ export interface AuthResponse {
   user: UserPublic;
 }
 
-export async function signup(email: string, password: string): Promise<AuthResponse> {
+export async function signup(email: string, password: string, turnstileToken: string): Promise<AuthResponse> {
   const res = await fetch(`${API_URL}/api/auth/signup`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     credentials: "include",
-    body: JSON.stringify({ email, password }),
+    body: JSON.stringify({ email, password, turnstileToken }),
   });
 
   if (!res.ok) {
@@ -92,12 +104,12 @@ export async function signup(email: string, password: string): Promise<AuthRespo
   return res.json();
 }
 
-export async function login(email: string, password: string): Promise<AuthResponse> {
+export async function login(email: string, password: string, turnstileToken: string): Promise<AuthResponse> {
   const res = await fetch(`${API_URL}/api/auth/login`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     credentials: "include",
-    body: JSON.stringify({ email, password }),
+    body: JSON.stringify({ email, password, turnstileToken }),
   });
 
   if (!res.ok) {

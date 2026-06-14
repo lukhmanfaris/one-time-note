@@ -61,4 +61,13 @@ describe("NoteStorage", () => {
     expect(parsed.salt).toBe("def");
     expect(parsed.iv).toBe("ghi");
   });
+
+  it("returns true for existing key and false for non-existent key", async () => {
+    const data = { ciphertext: "abc", salt: "def", iv: "ghi" };
+    await storage.save("testkey123456", data, 3600);
+    const exists = await storage.exists("testkey123456");
+    expect(exists).toBe(true);
+    const notExists = await storage.exists("nonexistentke1");
+    expect(notExists).toBe(false);
+  });
 });

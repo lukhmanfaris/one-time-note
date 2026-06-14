@@ -1,9 +1,10 @@
 import { describe, it, expect } from "vitest";
-import app from "../index";
+import { app } from "../index";
 import { signAccessToken } from "../auth";
 import type { AuthPayload } from "../types";
 
 const TEST_SECRET = "test-secret-key-for-jwt-signing-minimum-32-chars";
+const TURNSTILE_TOKEN = "test-turnstile-token";
 
 function createMockKV() {
   const store = new Map<string, { value: string; expiration?: number }>();
@@ -47,8 +48,13 @@ function createTestEnv() {
     JWT_SECRET: TEST_SECRET,
     ENVIRONMENT: "test",
     RESEND_API_KEY: "test-key",
+    TURNSTILE_SECRET_KEY: "test-bypass",
   };
 }
+
+const LOOKUP_ID_1 = "f1e2d3c4b5a6f1e2d3c4b5a6f1e2d3c4b5a6f1e2d3c4b5a6f1e2d3c4b5a6f1e2";
+const LOOKUP_ID_2 = "a2b3c4d5e6f7a2b3c4d5e6f7a2b3c4d5e6f7a2b3c4d5e6f7a2b3c4d5e6f7a2b3";
+const LOOKUP_ID_3 = "b3c4d5e6f7a8b3c4d5e6f7a8b3c4d5e6f7a8b3c4d5e6f7a8b3c4d5e6f7a8b3c4";
 
 describe("Full note lifecycle", () => {
   it("creates a note, retrieves it, then retrieval fails (one-time read)", async () => {
@@ -64,7 +70,8 @@ describe("Full note lifecycle", () => {
           salt: "dGVzdHNhbHQ=",
           iv: "dGVzdGl2ZWN0",
           ttl_seconds: 3600,
-          access_key: "LfcyclTest1X",
+          lookup_id: LOOKUP_ID_1,
+          turnstileToken: TURNSTILE_TOKEN,
         }),
       },
       env
@@ -72,23 +79,23 @@ describe("Full note lifecycle", () => {
 
     expect(createRes.status).toBe(201);
     const createBody = (await createRes.json()) as Record<string, unknown>;
-    expect(createBody.access_key).toBe("LfcyclTest1X");
+    expect(createBody.lookup_id).toBe(LOOKUP_ID_1);
     expect(createBody.expires_at).toBeDefined();
 
-    const getRes = await app.request("/api/notes/LfcyclTest1X", undefined, env);
+    const getRes = await app.request(`/api/notes/${LOOKUP_ID_1}`, undefined, env);
     expect(getRes.status).toBe(200);
     const getBody = (await getRes.json()) as Record<string, unknown>;
     expect(getBody.ciphertext).toBe("dGVzdCBlbmNyeXB0ZWQgZGF0YQ==");
     expect(getBody.salt).toBe("dGVzdHNhbHQ=");
     expect(getBody.iv).toBe("dGVzdGl2ZWN0");
 
-    const secondGetRes = await app.request("/api/notes/LfcyclTest1X", undefined, env);
+    const secondGetRes = await app.request(`/api/notes/${LOOKUP_ID_1}`, undefined, env);
     expect(secondGetRes.status).toBe(404);
   });
 
   it("returns 404 for non-existent key", async () => {
     const env = createTestEnv();
-    const res = await app.request("/api/notes/NonExistKey1X", undefined, env);
+    const res = await app.request("/api/notes/0000000000000000000000000000000000000000000000000000000000000000", undefined, env);
     expect(res.status).toBe(404);
     const body = await res.json() as { error: { code: string } };
     expect(body.error.code).toBe("NOT_FOUND");
@@ -106,7 +113,8 @@ describe("Full note lifecycle", () => {
           salt: "c2FsdA==",
           iv: "aXY=",
           ttl_seconds: 999,
-          access_key: "InvalidTTLT1",
+          lookup_id: LOOKUP_ID_2,
+          turnstileToken: TURNSTILE_TOKEN,
         }),
       },
       env
@@ -127,7 +135,8 @@ describe("Tier enforcement on note creation", () => {
         salt: "c2FsdA==",
         iv: "aXYxMjM0NTY3",
         ttl_seconds: 3600,
-        access_key: "AnonNoteOK1X",
+        lookup_id: LOOKUP_ID_3,
+        turnstileToken: TURNSTILE_TOKEN,
       }),
     }, env);
 
@@ -145,7 +154,8 @@ describe("Tier enforcement on note creation", () => {
         salt: "c2FsdA==",
         iv: "aXYxMjM0NTY3",
         ttl_seconds: 86400,
-        access_key: "AnonNoteBd1X",
+        lookup_id: "c4d5e6f7a8b9c4d5e6f7a8b9c4d5e6f7a8b9c4d5e6f7a8b9c4d5e6f7a8b9c4d5",
+        turnstileToken: TURNSTILE_TOKEN,
       }),
     }, env);
 
@@ -174,7 +184,8 @@ describe("Tier enforcement on note creation", () => {
         salt: "c2FsdA==",
         iv: "aXYxMjM0NTY3",
         ttl_seconds: 86400,
-        access_key: "FreeUsrTTL1X",
+        lookup_id: "d5e6f7a8b9c0d5e6f7a8b9c0d5e6f7a8b9c0d5e6f7a8b9c0d5e6f7a8b9c0d5e6",
+        turnstileToken: TURNSTILE_TOKEN,
       }),
     }, env);
 

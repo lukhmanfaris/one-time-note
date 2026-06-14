@@ -8,7 +8,7 @@ export function UseCases() {
     {
       number: "02",
       title: "Private Links",
-      description: "Send sensitive documents, URLs, or files access keys.",
+      description: "Send sensitive documents, URLs, or files via share links.",
     },
     {
       number: "03",

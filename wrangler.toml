@@ -22,3 +22,6 @@ migrations_dir = "migrations"
 
 [vars]
 ENVIRONMENT = "production"
+
+[triggers]
+crons = ["*/15 * * * *"]

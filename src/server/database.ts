@@ -6,40 +6,51 @@ export class NoteDatabase {
   async createNote(params: {
     id: string;
     userId: string | null;
-    accessKey: string;
+    lookupId: string;
     ttlSeconds: number;
+    expiresAt: string;
   }): Promise<NoteMetadata> {
     await this.db
       .prepare(
-        "INSERT INTO notes (id, user_id, access_key, ttl_seconds, status) VALUES (?, ?, ?, ?, 'active')"
+        "INSERT INTO notes (id, user_id, lookup_id, ttl_seconds, status, expires_at) VALUES (?, ?, ?, ?, 'active', ?)"
       )
-      .bind(params.id, params.userId, params.accessKey, params.ttlSeconds)
+      .bind(params.id, params.userId, params.lookupId, params.ttlSeconds, params.expiresAt)
       .run();
 
     return {
       id: params.id,
       user_id: params.userId,
-      access_key: params.accessKey,
+      lookup_id: params.lookupId,
       ttl_seconds: params.ttlSeconds,
       created_at: new Date().toISOString(),
       status: "active",
+      expires_at: params.expiresAt,
+      read_at: null,
     };
   }
 
-  async getNoteByKey(accessKey: string): Promise<NoteMetadata | null> {
+  async getNoteByKey(lookupId: string): Promise<NoteMetadata | null> {
     const result = await this.db
-      .prepare("SELECT * FROM notes WHERE access_key = ? AND status = 'active'")
-      .bind(accessKey)
+      .prepare("SELECT id, user_id, lookup_id, ttl_seconds, created_at, status, expires_at, read_at FROM notes WHERE lookup_id = ? AND status = 'active'")
+      .bind(lookupId)
       .first<NoteMetadata>();
     return result ?? null;
   }
 
-  async claimNote(accessKey: string): Promise<boolean> {
+  async claimNote(lookupId: string): Promise<boolean> {
+    const now = new Date().toISOString();
     const result = await this.db
-      .prepare("UPDATE notes SET status = 'claimed' WHERE access_key = ? AND status = 'active'")
-      .bind(accessKey)
+      .prepare("UPDATE notes SET status = 'claimed', read_at = ? WHERE lookup_id = ? AND status = 'active'")
+      .bind(now, lookupId)
       .run();
     return result.meta.changes > 0;
+  }
+
+  async deleteExpiredNotes(): Promise<number> {
+    const result = await this.db
+      .prepare("DELETE FROM notes WHERE expires_at <= datetime('now') OR read_at IS NOT NULL")
+      .run();
+    return result.meta.changes;
   }
 
   async countActiveNotesByUser(userId: string): Promise<number> {

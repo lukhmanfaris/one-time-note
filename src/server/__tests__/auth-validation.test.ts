@@ -2,55 +2,67 @@ import { describe, it, expect } from "vitest";
 import { validateSignup, validateLogin, validateResetRequest, validateResetConfirm } from "../middleware";
 
 describe("validateSignup", () => {
-  it("accepts valid signup data", () => {
-    const result = validateSignup({ email: "user@example.com", password: "SecureP@ss1" });
+  it("accepts valid signup data with turnstileToken", () => {
+    const result = validateSignup({ email: "user@example.com", password: "SecureP@ss1", turnstileToken: "test-token" });
     expect(result.valid).toBe(true);
   });
 
+  it("rejects missing turnstileToken", () => {
+    const result = validateSignup({ email: "user@example.com", password: "SecureP@ss1" });
+    expect(result.valid).toBe(false);
+    expect(result.error).toContain("turnstileToken");
+  });
+
   it("rejects missing email", () => {
-    const result = validateSignup({ password: "SecureP@ss1" });
+    const result = validateSignup({ password: "SecureP@ss1", turnstileToken: "test-token" });
     expect(result.valid).toBe(false);
     expect(result.error).toContain("email");
   });
 
   it("rejects invalid email format", () => {
-    const result = validateSignup({ email: "notanemail", password: "SecureP@ss1" });
+    const result = validateSignup({ email: "notanemail", password: "SecureP@ss1", turnstileToken: "test-token" });
     expect(result.valid).toBe(false);
     expect(result.error).toContain("email");
   });
 
   it("rejects short password", () => {
-    const result = validateSignup({ email: "user@example.com", password: "short1" });
+    const result = validateSignup({ email: "user@example.com", password: "short1", turnstileToken: "test-token" });
     expect(result.valid).toBe(false);
     expect(result.error).toContain("8");
   });
 
   it("rejects long password", () => {
-    const result = validateSignup({ email: "user@example.com", password: "A".repeat(129) });
+    const result = validateSignup({ email: "user@example.com", password: "A".repeat(129), turnstileToken: "test-token" });
     expect(result.valid).toBe(false);
     expect(result.error).toContain("128");
   });
 
   it("rejects missing password", () => {
-    const result = validateSignup({ email: "user@example.com" });
+    const result = validateSignup({ email: "user@example.com", turnstileToken: "test-token" });
     expect(result.valid).toBe(false);
     expect(result.error).toContain("Password");
   });
 });
 
 describe("validateLogin", () => {
-  it("accepts valid login data", () => {
-    const result = validateLogin({ email: "user@example.com", password: "anypassword" });
+  it("accepts valid login data with turnstileToken", () => {
+    const result = validateLogin({ email: "user@example.com", password: "anypassword", turnstileToken: "test-token" });
     expect(result.valid).toBe(true);
   });
 
+  it("rejects missing turnstileToken", () => {
+    const result = validateLogin({ email: "user@example.com", password: "anypassword" });
+    expect(result.valid).toBe(false);
+    expect(result.error).toContain("turnstileToken");
+  });
+
   it("rejects missing email", () => {
-    const result = validateLogin({ password: "anypassword" });
+    const result = validateLogin({ password: "anypassword", turnstileToken: "test-token" });
     expect(result.valid).toBe(false);
   });
 
   it("rejects missing password", () => {
-    const result = validateLogin({ email: "user@example.com" });
+    const result = validateLogin({ email: "user@example.com", turnstileToken: "test-token" });
     expect(result.valid).toBe(false);
   });
 });

@@ -5,6 +5,7 @@ import { UserDatabase } from "../database";
 import { authGuard } from "../auth-middleware";
 import { validateSignup, validateLogin, validateResetRequest, validateResetConfirm } from "../middleware";
 import { sendPasswordResetEmail } from "../email";
+import { verifyTurnstile } from "../turnstile";
 import { RESET_TOKEN_EXPIRY_SECONDS } from "../types";
 import { hashPassword, verifyPassword, signAccessToken, generateUserId, generateRefreshToken } from "../auth";
 import { verifyAccessToken } from "../auth";
@@ -42,9 +43,14 @@ authRoutes.post("/signup", async (c) => {
     return c.json({ error: { status: 400, code: "VALIDATION_ERROR", message: validation.error! } }, 400);
   }
 
-  const { email, password } = body as { email: string; password: string };
+  const { email, password, turnstileToken } = body as { email: string; password: string; turnstileToken: string };
 
   try {
+    const turnstileValid = await verifyTurnstile(turnstileToken, c.env.TURNSTILE_SECRET_KEY);
+    if (!turnstileValid) {
+      return c.json({ error: { status: 403, code: "FORBIDDEN", message: "Turnstile verification failed" } }, 403);
+    }
+
     const userDb = new UserDatabase(c.env.DB);
 
     const existingUser = await userDb.findUserByEmail(email);
@@ -130,9 +136,14 @@ authRoutes.post("/login", async (c) => {
     return c.json({ error: { status: 400, code: "VALIDATION_ERROR", message: validation.error! } }, 400);
   }
 
-  const { email, password } = body as { email: string; password: string };
+  const { email, password, turnstileToken } = body as { email: string; password: string; turnstileToken: string };
 
   try {
+    const turnstileValid = await verifyTurnstile(turnstileToken, c.env.TURNSTILE_SECRET_KEY);
+    if (!turnstileValid) {
+      return c.json({ error: { status: 403, code: "FORBIDDEN", message: "Turnstile verification failed" } }, 403);
+    }
+
     const userDb = new UserDatabase(c.env.DB);
 
     const user = await userDb.findUserByEmail(email);

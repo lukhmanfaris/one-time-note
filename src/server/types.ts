@@ -6,6 +6,7 @@ export interface Env {
   ENVIRONMENT: string;
   JWT_SECRET: string;
   RESEND_API_KEY: string;
+  TURNSTILE_SECRET_KEY: string;
 }
 
 export interface CreateNoteRequest {
@@ -13,7 +14,7 @@ export interface CreateNoteRequest {
   salt: string;
   iv: string;
   ttl_seconds: number;
-  access_key: string;
+  lookup_id: string;
 }
 
 export interface NoteData {
@@ -25,10 +26,12 @@ export interface NoteData {
 export interface NoteMetadata {
   id: string;
   user_id: string | null;
-  access_key: string;
+  lookup_id: string;
   ttl_seconds: number;
   created_at: string;
-  status: "active" | "claimed";
+  status: "active" | "claimed" | "expired";
+  expires_at: string | null;
+  read_at: string | null;
 }
 
 export const VALID_TTL_SECONDS = [3600, 86400, 604800] as const;
@@ -36,8 +39,8 @@ export type ValidTTL = (typeof VALID_TTL_SECONDS)[number];
 
 export const MAX_NOTE_SIZE_BYTES = 10240;
 
-export const ACCESS_KEY_LENGTH = 12;
-export const ACCESS_KEY_CHARS = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
+export const LOOKUP_ID_LENGTH = 64;
+export const LOOKUP_ID_REGEX = /^[a-f0-9]{64}$/;
 
 export interface User {
   id: string;

@@ -3,6 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { Turnstile } from "@marsidev/react-turnstile";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
@@ -10,12 +11,15 @@ import { signup } from "@/lib/api";
 import { useAuth } from "@/components/auth-provider";
 import { getErrorMessage } from "@/lib/api-errors";
 
+const TURNSTILE_SITE_KEY = process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY || "";
+
 export default function SignupPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  const [turnstileToken, setTurnstileToken] = useState<string | null>(null);
   const { setUser } = useAuth();
   const router = useRouter();
 
@@ -33,10 +37,15 @@ export default function SignupPage() {
       return;
     }
 
+    if (!turnstileToken) {
+      setError("Bot verification incomplete. Please wait.");
+      return;
+    }
+
     setLoading(true);
 
     try {
-      const result = await signup(email, password);
+      const result = await signup(email, password, turnstileToken);
       setUser(result.user);
       router.push("/account");
     } catch (err) {
@@ -92,8 +101,16 @@ export default function SignupPage() {
                 disabled={loading}
               />
             </div>
+            {TURNSTILE_SITE_KEY && (
+              <Turnstile
+                siteKey={TURNSTILE_SITE_KEY}
+                onSuccess={setTurnstileToken}
+                onError={() => setTurnstileToken(null)}
+                options={{ size: "normal" }}
+              />
+            )}
             {error && <p className="text-sm text-destructive">{error}</p>}
-            <Button type="submit" className="w-full" disabled={loading}>
+            <Button type="submit" className="w-full" disabled={loading || !turnstileToken}>
               {loading ? "Creating account..." : "Sign Up"}
             </Button>
           </form>

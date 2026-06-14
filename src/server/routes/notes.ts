@@ -4,6 +4,7 @@ import { NoteDatabase } from "../database";
 import { validateCreateNoteRequest } from "../middleware";
 import { verifyAccessToken } from "../auth";
 import { getAuthCookiePattern } from "../cookies";
+import { verifyTurnstile } from "../turnstile";
 import { FREE_TTL_MAX, FREE_MAX_ACTIVE_NOTES } from "../types";
 import type { Env, AuthPayload } from "../types";
 
@@ -43,16 +44,27 @@ noteRoutes.post("/notes", async (c) => {
     );
   }
 
-  const { ciphertext, salt, iv, ttl_seconds, access_key } = body as {
+  const { ciphertext, salt, iv, ttl_seconds, lookup_id, turnstileToken } = body as {
     ciphertext: string;
     salt: string;
     iv: string;
     ttl_seconds: number;
-    access_key: string;
+    lookup_id: string;
+    turnstileToken: string;
   };
   const user = c.get("user") as AuthPayload | null;
 
   try {
+    const turnstileValid = await verifyTurnstile(turnstileToken, c.env.TURNSTILE_SECRET_KEY);
+    if (!turnstileValid) {
+      return c.json(
+        { error: { status: 403, code: "FORBIDDEN", message: "Turnstile verification failed" } },
+        403
+      );
+    }
+
+    const expiresAt = new Date(Date.now() + ttl_seconds * 1000).toISOString();
+
     if (!user) {
       if (ttl_seconds !== FREE_TTL_MAX) {
         return c.json(
@@ -78,21 +90,27 @@ noteRoutes.post("/notes", async (c) => {
     }
 
     const storage = new NoteStorage(c.env.NOTES_KV);
-    await storage.save(access_key, { ciphertext, salt, iv }, ttl_seconds);
+    const keyExists = await storage.exists(lookup_id);
+    if (keyExists) {
+      return c.json(
+        { error: { status: 409, code: "CONFLICT", message: "Lookup ID already exists" } },
+        409
+      );
+    }
+    await storage.save(lookup_id, { ciphertext, salt, iv }, ttl_seconds);
 
     if (user) {
       const noteDb = new NoteDatabase(c.env.DB);
       await noteDb.createNote({
-        id: `note_${access_key}`,
+        id: `note_${lookup_id}`,
         userId: user.userId,
-        accessKey: access_key,
+        lookupId: lookup_id,
         ttlSeconds: ttl_seconds,
+        expiresAt: expiresAt,
       });
     }
 
-    const expiresAt = new Date(Date.now() + ttl_seconds * 1000).toISOString();
-
-    return c.json({ access_key, expires_at: expiresAt }, 201);
+    return c.json({ lookup_id, expires_at: expiresAt }, 201);
   } catch (err) {
     console.error("Create note handler error:", err instanceof Error ? err.message : String(err), err);
     return c.json(
@@ -102,18 +120,22 @@ noteRoutes.post("/notes", async (c) => {
   }
 });
 
-noteRoutes.get("/notes/:key", async (c) => {
+noteRoutes.get("/notes/:lookupId", async (c) => {
   try {
-    const key = c.req.param("key");
+    const lookupId = c.req.param("lookupId");
+    const noteDb = c.env.DB ? new NoteDatabase(c.env.DB) : null;
+    const existingNote = noteDb ? await noteDb.getNoteByKey(lookupId) : null;
+
     const storage = new NoteStorage(c.env.NOTES_KV);
-    const noteData = await storage.retrieve(key);
+    const noteData = await storage.retrieve(lookupId);
 
     if (!noteData) {
       return c.json({ error: { status: 404, code: "NOT_FOUND", message: "Note not found or already retrieved" } }, 404);
     }
 
-    const noteDb = new NoteDatabase(c.env.DB);
-    await noteDb.claimNote(key);
+    if (existingNote && noteDb) {
+      await noteDb.claimNote(lookupId);
+    }
 
     return c.json(noteData);
   } catch (err) {

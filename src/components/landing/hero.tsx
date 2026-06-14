@@ -77,7 +77,7 @@ export function Hero() {
             {/* Floating key card */}
             <div className="glass rounded-2xl p-5 absolute -bottom-8 -left-8 w-48 z-20">
               <div className="font-mono text-xs tracking-widest uppercase text-black/40 mb-2">
-                Access Key
+                Share Link
               </div>
               <div className="font-mono text-lg tracking-widest font-semibold text-black">
                 X7K9-M2P4

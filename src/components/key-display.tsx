@@ -3,21 +3,21 @@
 import { Badge } from "@/components/ui/badge";
 
 interface KeyDisplayProps {
-  accessKey: string;
+  shareUrl: string;
   expiresLabel: string;
 }
 
-export function KeyDisplay({ accessKey, expiresLabel }: KeyDisplayProps) {
+export function KeyDisplay({ shareUrl, expiresLabel }: KeyDisplayProps) {
   const copyToClipboard = () => {
-    navigator.clipboard.writeText(accessKey);
+    navigator.clipboard.writeText(shareUrl);
   };
 
   return (
     <div className="space-y-3 opacity-0 animate-scale-in mt-6">
       <div className="border rounded-lg p-6 text-center space-y-3">
-        <Badge variant="secondary">ACCESS KEY — SHARE WITH RECIPIENT</Badge>
-        <div className="font-mono text-4xl font-bold tracking-widest break-all select-all">
-          {accessKey}
+        <Badge variant="secondary">SHARE LINK — SEND TO RECIPIENT</Badge>
+        <div className="font-mono text-sm break-all select-all rounded bg-muted p-3 text-left">
+          {shareUrl}
         </div>
         <button
           onClick={copyToClipboard}
@@ -27,7 +27,7 @@ export function KeyDisplay({ accessKey, expiresLabel }: KeyDisplayProps) {
         </button>
       </div>
       <p className="text-xs text-muted-foreground text-center">
-        EXPIRES IN {expiresLabel} · ONE-TIME READ
+        EXPIRES IN {expiresLabel} · ONE-TIME READ · KEEP THIS LINK PRIVATE
       </p>
     </div>
   );

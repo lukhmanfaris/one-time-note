@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import app from "../index";
+import { app } from "../index";
 
 const mockKV = () => {
   const store = new Map<string, string>();
@@ -55,6 +55,7 @@ const createTestEnv = () => ({
   JWT_SECRET: "test-secret-key-for-jwt-signing-minimum-32-chars",
   ENVIRONMENT: "test",
   RESEND_API_KEY: "test-key",
+  TURNSTILE_SECRET_KEY: "test-bypass",
 });
 
 describe("POST /api/auth/signup", () => {
@@ -63,7 +64,7 @@ describe("POST /api/auth/signup", () => {
     const res = await app.request("/api/auth/signup", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ email: "test@example.com", password: "SecurePass1" }),
+      body: JSON.stringify({ email: "test@example.com", password: "SecurePass1", turnstileToken: "test-token" }),
     }, env);
 
     expect(res.status).toBe(201);
@@ -78,7 +79,7 @@ describe("POST /api/auth/signup", () => {
     const res = await app.request("/api/auth/signup", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ password: "SecurePass1" }),
+      body: JSON.stringify({ password: "SecurePass1", turnstileToken: "test-token" }),
     }, env);
 
     expect(res.status).toBe(400);
@@ -89,7 +90,18 @@ describe("POST /api/auth/signup", () => {
     const res = await app.request("/api/auth/signup", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ email: "test2@example.com", password: "short" }),
+      body: JSON.stringify({ email: "test2@example.com", password: "short", turnstileToken: "test-token" }),
+    }, env);
+
+    expect(res.status).toBe(400);
+  });
+
+  it("rejects signup with missing turnstileToken", async () => {
+    const env = createTestEnv();
+    const res = await app.request("/api/auth/signup", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ email: "test3@example.com", password: "SecurePass1" }),
     }, env);
 
     expect(res.status).toBe(400);
@@ -103,6 +115,17 @@ describe("POST /api/auth/login", () => {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({}),
+    }, env);
+
+    expect(res.status).toBe(400);
+  });
+
+  it("rejects login with missing turnstileToken", async () => {
+    const env = createTestEnv();
+    const res = await app.request("/api/auth/login", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ email: "user@example.com", password: "password123" }),
     }, env);
 
     expect(res.status).toBe(400);

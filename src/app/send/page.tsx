@@ -2,12 +2,15 @@
 
 import { useState } from "react";
 import Link from "next/link";
+import { Turnstile } from "@marsidev/react-turnstile";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent } from "@/components/ui/card";
 import { KeyDisplay } from "@/components/key-display";
-import { encryptNote, generateAccessKey } from "@/lib/crypto";
+import { encryptNote, generateEncryptionKey, deriveLookupId, buildShareUrl } from "@/lib/crypto";
 import { createNote } from "@/lib/api";
+
+const TURNSTILE_SITE_KEY = process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY || "";
 
 const TTL_OPTIONS: Record<string, number> = {
   "1 hour": 3600,
@@ -18,10 +21,11 @@ const TTL_OPTIONS: Record<string, number> = {
 export default function SendPage() {
   const [note, setNote] = useState("");
   const [ttl, setTtl] = useState<string>("1 hour");
-  const [accessKey, setAccessKey] = useState<string | null>(null);
+  const [shareUrl, setShareUrl] = useState<string | null>(null);
   const [expiresLabel, setExpiresLabel] = useState<string>("");
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  const [turnstileToken, setTurnstileToken] = useState<string | null>(null);
 
   const handleEncrypt = async () => {
     if (!note.trim()) {
@@ -29,19 +33,31 @@ export default function SendPage() {
       return;
     }
 
+    if (!turnstileToken) {
+      setError("Bot verification incomplete. Please wait.");
+      return;
+    }
+
     setError(null);
     setLoading(true);
-    setAccessKey(null);
+    setShareUrl(null);
 
     try {
-      const key = generateAccessKey();
-      const encrypted = await encryptNote(note.trim(), key);
-      await createNote(encrypted, TTL_OPTIONS[ttl], key);
-      setAccessKey(key);
+      const encryptionKey = generateEncryptionKey();
+      const lookupId = await deriveLookupId(encryptionKey);
+      const encrypted = await encryptNote(note.trim(), encryptionKey);
+      await createNote(encrypted, TTL_OPTIONS[ttl], lookupId, turnstileToken);
+      const url = buildShareUrl(lookupId, encryptionKey);
+      setShareUrl(url);
       setExpiresLabel(ttl.toUpperCase());
       setNote("");
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Encryption failed. Try again.");
+      const msg = err instanceof Error ? err.message : "Encryption failed. Try again.";
+      if (msg.includes("Unable to reach") || msg.includes("Failed to fetch") || msg.includes("Load failed")) {
+        setError("Unable to connect. Check your internet connection and try again.");
+      } else {
+        setError(msg);
+      }
     } finally {
       setLoading(false);
     }
@@ -55,7 +71,7 @@ export default function SendPage() {
 
       <h1 className="text-2xl font-bold mb-2">Send a Secret Note</h1>
       <p className="text-muted-foreground mb-8">
-        Write a message. Select expiry. Get a unique access key to share.
+        Write a message. Select expiry. Get a unique link to share.
       </p>
 
       <Card>
@@ -87,15 +103,24 @@ export default function SendPage() {
             </select>
           </div>
 
-          <Button onClick={handleEncrypt} disabled={loading || !note.trim()} className="w-full">
-            {loading ? "Encrypting..." : "GENERATE KEY & ENCRYPT"}
+          {TURNSTILE_SITE_KEY && (
+            <Turnstile
+              siteKey={TURNSTILE_SITE_KEY}
+              onSuccess={setTurnstileToken}
+              onError={() => setTurnstileToken(null)}
+              options={{ size: "normal" }}
+            />
+          )}
+
+          <Button onClick={handleEncrypt} disabled={loading || !note.trim() || !turnstileToken} className="w-full">
+            {loading ? "Encrypting..." : "GENERATE LINK & ENCRYPT"}
           </Button>
 
           {error && <p className="text-sm text-destructive">{error}</p>}
         </CardContent>
       </Card>
 
-      {accessKey && <KeyDisplay accessKey={accessKey} expiresLabel={expiresLabel} />}
+      {shareUrl && <KeyDisplay shareUrl={shareUrl} expiresLabel={expiresLabel} />}
     </div>
   );
 }
