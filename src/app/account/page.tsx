@@ -60,7 +60,7 @@ export default function AccountPage() {
   async function handleRevokeAll() {
     try {
       setRevokingAll(true);
-      const deleted = await revokeAllOtherSessions();
+      await revokeAllOtherSessions();
       setSessions((prev) => prev.filter((s) => s.current));
     } catch (err) {
       setError(getErrorMessage(err));

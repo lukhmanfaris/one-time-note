@@ -48,4 +48,5 @@ app.route("/api/cron", cronRoutes);
 
 export { app };
 
-export default { fetch: app.fetch };
+const appHandler = { fetch: app.fetch };
+export default appHandler;

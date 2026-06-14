@@ -45,7 +45,7 @@ export function generateEncryptionKey(): string {
 }
 
 export async function deriveLookupId(encryptionKey: string): Promise<string> {
-  let binary = atob(encryptionKey.replace(/-/g, "+").replace(/_/g, "/"));
+  const binary = atob(encryptionKey.replace(/-/g, "+").replace(/_/g, "/"));
   const bytes = new Uint8Array(binary.length);
   for (let i = 0; i < binary.length; i++) {
     bytes[i] = binary.charCodeAt(i);

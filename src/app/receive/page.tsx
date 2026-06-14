@@ -22,7 +22,7 @@ export default function ReceivePage() {
       setAutoAttempted(true);
       handleDecrypt(parsed.lookupId, parsed.encryptionKey);
     }
-  }, []);
+  }, [autoAttempted]);
 
   const handleDecrypt = async (lookupId: string, encryptionKey: string) => {
     setError(null);

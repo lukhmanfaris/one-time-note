@@ -12,7 +12,6 @@ import { getAuthCookieName, getRefreshCookieName, getAuthCookiePattern, getRefre
 import {
   createSession,
   findSessionByToken,
-  updateSessionActivity,
   deleteSessionById,
   deleteAllSessionsExcept,
   rotateSessionToken,
