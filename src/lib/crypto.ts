@@ -18,13 +18,13 @@ function arrayBufferToBase64(source: Uint8Array | ArrayBuffer): string {
   return btoa(binary);
 }
 
-function base64ToArrayBuffer(base64: string): ArrayBuffer {
+function base64ToArrayBuffer(base64: string): Uint8Array {
   const binary = atob(base64);
   const bytes = new Uint8Array(binary.length);
   for (let i = 0; i < binary.length; i++) {
     bytes[i] = binary.charCodeAt(i);
   }
-  return bytes.buffer;
+  return bytes;
 }
 
 function arrayBufferToHex(buffer: ArrayBuffer): string {
@@ -106,15 +106,15 @@ export async function encryptNote(plaintext: string, encryptionKey: string): Pro
 }
 
 export async function decryptNote(encrypted: EncryptedNote, encryptionKey: string): Promise<string> {
-  const salt = new Uint8Array(base64ToArrayBuffer(encrypted.salt));
-  const iv = new Uint8Array(base64ToArrayBuffer(encrypted.iv));
+  const salt = base64ToArrayBuffer(encrypted.salt);
+  const iv = base64ToArrayBuffer(encrypted.iv);
   const ciphertext = base64ToArrayBuffer(encrypted.ciphertext);
 
   const key = await deriveKey(encryptionKey, salt);
   const decrypted = await crypto.subtle.decrypt(
-    { name: "AES-GCM", iv: iv },
+    { name: "AES-GCM", iv: iv as BufferSource },
     key,
-    ciphertext
+    ciphertext as BufferSource
   );
 
   const decoder = new TextDecoder();
