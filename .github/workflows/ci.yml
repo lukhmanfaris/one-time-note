@@ -28,9 +28,10 @@ jobs:
       - name: Run tests
         run: npx vitest run
 
-      # Uncomment to enable Cloudflare Pages deployment on pushes to main.
-      # Requires GitHub secrets: CLOUDFLARE_ACCOUNT_ID and CLOUDFLARE_API_TOKEN.
-- name: Deploy to Cloudflare Pages
+      - name: Build project
+        run: npm run build
+
+      - name: Deploy to Cloudflare Pages
         if: github.ref == 'refs/heads/main'
         uses: cloudflare/pages-action@v1
         with:
