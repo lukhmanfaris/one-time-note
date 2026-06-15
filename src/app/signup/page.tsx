@@ -101,13 +101,10 @@ export default function SignupPage() {
                 disabled={loading}
               />
             </div>
-            {TURNSTILE_SITE_KEY && (
-              <Turnstile
-                siteKey={TURNSTILE_SITE_KEY}
-                onSuccess={setTurnstileToken}
-                onError={() => setTurnstileToken(null)}
-                options={{ size: "normal" }}
-              />
+            {TURNSTILE_SITE_KEY ? (
+              <Turnstile siteKey={TURNSTILE_SITE_KEY} onSuccess={setTurnstileToken} onError={() => setTurnstileToken(null)} options={{ size: "normal" }} />
+            ) : (
+              <p className="text-sm text-destructive">Bot verification isn’t configured. Set NEXT_PUBLIC_TURNSTILE_SITE_KEY and rebuild.</p>
             )}
             {error && <p className="text-sm text-destructive">{error}</p>}
             <Button type="submit" className="w-full" disabled={loading || !turnstileToken}>

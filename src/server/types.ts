@@ -8,6 +8,8 @@ export interface Env {
   RESEND_API_KEY: string;
   TURNSTILE_SECRET_KEY: string;
   CRON_SECRET: string;
+  FRONTEND_URL: string;
+  EMAIL_FROM: string;
 }
 
 export interface CreateNoteRequest {

@@ -22,3 +22,5 @@ migrations_dir = "migrations"
 
 [vars]
 ENVIRONMENT = "production"
+FRONTEND_URL = "https://revelio-47h.pages.dev"
+EMAIL_FROM = "onboarding@resend.dev"

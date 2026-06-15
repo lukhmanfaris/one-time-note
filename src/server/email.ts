@@ -1,5 +1,4 @@
 const RESEND_API_URL = "https://api.resend.com/emails";
-const FROM_ADDRESS = "noreply@revelio.app";
 
 export interface SendResetEmailResult {
   success: boolean;
@@ -10,7 +9,8 @@ export async function sendPasswordResetEmail(
   toEmail: string,
   resetToken: string,
   apiKey: string,
-  frontendUrl: string = "http://localhost:3000"
+  frontendUrl: string = "http://localhost:3000",
+  fromAddress: string = "onboarding@resend.dev"
 ): Promise<SendResetEmailResult> {
   const resetLink = `${frontendUrl}/reset?token=${resetToken}`;
 
@@ -22,7 +22,7 @@ export async function sendPasswordResetEmail(
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        from: FROM_ADDRESS,
+        from: fromAddress,
         to: [toEmail],
         subject: "Revelio — Reset Your Password",
         html: `
