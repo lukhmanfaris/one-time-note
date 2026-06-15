@@ -460,7 +460,7 @@ authRoutes.post("/reset-request", async (c) => {
 
     const frontendUrl = c.env.ENVIRONMENT === "development"
       ? "http://localhost:3000"
-      : "https://revelio.app";
+      : "https://revelio-47h.pages.dev/";
 
     const emailResult = await sendPasswordResetEmail(user.email, resetToken, c.env.RESEND_API_KEY, frontendUrl);
 

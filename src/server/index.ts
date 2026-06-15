@@ -23,7 +23,7 @@ const allowedOrigins = [
   "http://localhost:3000",
   "http://localhost:8787",
   "http://localhost:8788",
-  "https://revelio.app",
+  "hhttps://revelio-47h.pages.dev/",
 ];
 
 app.use(
