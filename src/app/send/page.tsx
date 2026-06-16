@@ -1,7 +1,8 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useRef } from "react";
 import Link from "next/link";
+import type { TurnstileInstance } from "@marsidev/react-turnstile";
 import { Turnstile } from "@marsidev/react-turnstile";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
@@ -26,6 +27,7 @@ export default function SendPage() {
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [turnstileToken, setTurnstileToken] = useState<string | null>(null);
+  const turnstileRef = useRef<TurnstileInstance>(null);
 
   const handleEncrypt = async () => {
     if (!note.trim()) {
@@ -52,6 +54,7 @@ export default function SendPage() {
       setExpiresLabel(ttl.toUpperCase());
       setNote("");
     } catch (err) {
+      console.error("createNote failed:", err);
       const msg = err instanceof Error ? err.message : "Encryption failed. Try again.";
       if (msg.includes("Unable to reach") || msg.includes("Failed to fetch") || msg.includes("Load failed")) {
         setError("Unable to connect. Check your internet connection and try again.");
@@ -60,6 +63,8 @@ export default function SendPage() {
       }
     } finally {
       setLoading(false);
+      turnstileRef.current?.reset();
+      setTurnstileToken(null);
     }
   };
 
@@ -104,7 +109,7 @@ export default function SendPage() {
           </div>
 
           {TURNSTILE_SITE_KEY ? (
-            <Turnstile siteKey={TURNSTILE_SITE_KEY} onSuccess={setTurnstileToken} onError={() => setTurnstileToken(null)} options={{ size: "normal" }} />
+            <Turnstile ref={turnstileRef} siteKey={TURNSTILE_SITE_KEY} onSuccess={setTurnstileToken} onError={() => setTurnstileToken(null)} options={{ size: "normal" }} />
           ) : (
             <p className="text-sm text-destructive">Bot verification isn’t configured. Set NEXT_PUBLIC_TURNSTILE_SITE_KEY and rebuild.</p>
           )}

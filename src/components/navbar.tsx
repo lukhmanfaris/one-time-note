@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { UserMenu } from "@/components/user-menu";
 
 export function Navbar() {
   return (
@@ -18,12 +19,7 @@ export function Navbar() {
           >
             Pricing
           </Link>
-          <Link
-            href="/login"
-            className="font-mono text-xs tracking-wider uppercase text-black/40 hover:text-black transition-smooth px-4 py-2 rounded-lg"
-          >
-            Login
-          </Link>
+          <UserMenu />
           <Link
             href="/receive"
             className="btn-black rounded-xl px-5 py-2.5 font-mono text-xs tracking-wider uppercase transition-smooth"

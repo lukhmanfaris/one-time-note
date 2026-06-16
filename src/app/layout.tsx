@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Urbanist, Open_Sans } from "next/font/google";
 import { Navbar } from "@/components/navbar";
+import { AuthProvider } from "@/components/auth-provider";
 import "./globals.css";
 
 const urbanist = Urbanist({
@@ -38,11 +39,13 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
             }} 
           />
           
-          <Navbar />
-          
-          <main className="relative z-10">
-            {children}
-          </main>
+          <AuthProvider>
+            <Navbar />
+            
+            <main className="relative z-10">
+              {children}
+            </main>
+          </AuthProvider>
         </div>
 
 

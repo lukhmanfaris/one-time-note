@@ -1,8 +1,9 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useRef } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import type { TurnstileInstance } from "@marsidev/react-turnstile";
 import { Turnstile } from "@marsidev/react-turnstile";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -20,6 +21,7 @@ export default function SignupPage() {
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [turnstileToken, setTurnstileToken] = useState<string | null>(null);
+  const turnstileRef = useRef<TurnstileInstance>(null);
   const { setUser } = useAuth();
   const router = useRouter();
 
@@ -52,6 +54,8 @@ export default function SignupPage() {
       setError(getErrorMessage(err));
     } finally {
       setLoading(false);
+      turnstileRef.current?.reset();
+      setTurnstileToken(null);
     }
   };
 
@@ -102,7 +106,7 @@ export default function SignupPage() {
               />
             </div>
             {TURNSTILE_SITE_KEY ? (
-              <Turnstile siteKey={TURNSTILE_SITE_KEY} onSuccess={setTurnstileToken} onError={() => setTurnstileToken(null)} options={{ size: "normal" }} />
+              <Turnstile ref={turnstileRef} siteKey={TURNSTILE_SITE_KEY} onSuccess={setTurnstileToken} onError={() => setTurnstileToken(null)} options={{ size: "normal" }} />
             ) : (
               <p className="text-sm text-destructive">Bot verification isn’t configured. Set NEXT_PUBLIC_TURNSTILE_SITE_KEY and rebuild.</p>
             )}
