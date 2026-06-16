@@ -13,7 +13,7 @@ export function KeyDisplay({ shareUrl, expiresLabel }: KeyDisplayProps) {
   };
 
   return (
-    <div className="space-y-3 opacity-0 animate-scale-in mt-6">
+    <div className="space-y-3 mt-6 animate-in fade-in zoom-in-95 duration-300">
       <div className="border rounded-lg p-6 text-center space-y-3">
         <Badge variant="secondary">SHARE LINK — SEND TO RECIPIENT</Badge>
         <div className="font-mono text-sm break-all select-all rounded bg-muted p-3 text-left">
