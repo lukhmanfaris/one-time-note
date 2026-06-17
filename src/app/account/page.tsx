@@ -2,6 +2,8 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
+import { Monitor } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -9,7 +11,6 @@ import { useAuth } from "@/components/auth-provider";
 import { logout, getSessions, revokeSession, revokeAllOtherSessions } from "@/lib/api";
 import { getErrorMessage } from "@/lib/api-errors";
 import type { SessionInfo } from "@/lib/api";
-import Link from "next/link";
 
 export default function AccountPage() {
   const { user, loading, setUser } = useAuth();
@@ -77,8 +78,17 @@ export default function AccountPage() {
 
   if (loading) {
     return (
-      <div className="max-w-lg mx-auto px-4 py-12">
-        <p className="text-muted-foreground text-center">Loading...</p>
+      <div className="max-w-lg mx-auto px-4 pt-navbar pb-12 space-y-6">
+        {[1, 2, 3].map((i) => (
+          <div key={i} className="rounded-xl border border-border bg-card p-6 animate-pulse">
+            <div className="h-4 bg-foreground/10 rounded w-1/3 mb-4" />
+            <div className="space-y-3">
+              <div className="h-3 bg-foreground/5 rounded w-full" />
+              <div className="h-3 bg-foreground/5 rounded w-4/5" />
+              <div className="h-3 bg-foreground/5 rounded w-3/5" />
+            </div>
+          </div>
+        ))}
       </div>
     );
   }
@@ -91,12 +101,12 @@ export default function AccountPage() {
   const otherSessions = sessions.filter((s) => !s.current);
 
   return (
-    <div className="max-w-lg mx-auto px-4 py-12">
-      <h1 className="text-2xl font-bold mb-6">Account</h1>
+    <div className="max-w-lg mx-auto px-4 pt-navbar pb-12">
+      <h1 className="font-ui text-2xl font-bold mb-6">Account</h1>
 
       <Card className="mb-6">
         <CardHeader>
-          <CardTitle className="flex items-center gap-2">
+          <CardTitle className="font-ui flex items-center gap-2">
             Profile
             <Badge variant={isPro ? "default" : "secondary"}>
               {isPro ? "Pro" : "Free"}
@@ -106,22 +116,22 @@ export default function AccountPage() {
         <CardContent className="space-y-3">
           <div className="flex justify-between text-sm">
             <span className="text-muted-foreground">Email</span>
-            <span>{user.email}</span>
+            <span className="font-mono">{user.email}</span>
           </div>
           <div className="flex justify-between text-sm">
             <span className="text-muted-foreground">Member since</span>
-            <span>{new Date(user.created_at).toLocaleDateString()}</span>
+            <span className="font-mono">{new Date(user.created_at).toLocaleDateString()}</span>
           </div>
           <div className="flex justify-between text-sm">
             <span className="text-muted-foreground">Active notes</span>
-            <span>{user.active_notes}</span>
+            <span className="font-mono">{user.active_notes}</span>
           </div>
         </CardContent>
       </Card>
 
       <Card className="mb-6">
         <CardHeader>
-          <CardTitle>Plan</CardTitle>
+          <CardTitle className="font-ui">Plan</CardTitle>
         </CardHeader>
         <CardContent className="space-y-3">
           {isPro ? (
@@ -135,33 +145,33 @@ export default function AccountPage() {
               </div>
               <div className="space-y-2 mt-3 text-sm">
                 <div className="flex items-center gap-2">
-                  <span className="text-destructive">&#x2717;</span>
+                  <span className="text-destructive font-mono">✗</span>
                   <span>1-hour TTL only</span>
                 </div>
                 <div className="flex items-center gap-2">
-                  <span className="text-destructive">&#x2717;</span>
+                  <span className="text-destructive font-mono">✗</span>
                   <span>1 active note at a time</span>
                 </div>
                 <div className="flex items-center gap-2 text-muted-foreground">
-                  <span className="text-green-600">&#x2713;</span>
+                  <span className="text-success font-mono">✓</span>
                   <span>24-hour and 7-day TTL</span>
                 </div>
                 <div className="flex items-center gap-2 text-muted-foreground">
-                  <span className="text-green-600">&#x2713;</span>
+                  <span className="text-success font-mono">✓</span>
                   <span>Unlimited active notes</span>
                 </div>
               </div>
             </>
           )}
           {!isPro && (
-            <Button className="w-full mt-4">Upgrade to Pro &mdash; $5/month</Button>
+            <Button className="w-full mt-4 font-ui">Upgrade to Pro &mdash; $5/month</Button>
           )}
         </CardContent>
       </Card>
 
       <Card className="mb-6">
         <CardHeader>
-          <CardTitle className="flex items-center justify-between">
+          <CardTitle className="font-ui flex items-center justify-between">
             Active Sessions
             {otherSessions.length > 0 && (
               <Button
@@ -178,15 +188,25 @@ export default function AccountPage() {
         <CardContent>
           {error && <p className="text-sm text-destructive mb-3">{error}</p>}
           {sessionsLoading ? (
-            <p className="text-sm text-muted-foreground">Loading sessions...</p>
+            <div className="space-y-3">
+              {[1, 2].map((i) => (
+                <div key={i} className="rounded-lg border border-border p-3 animate-pulse">
+                  <div className="h-3 bg-foreground/10 rounded w-1/3 mb-2" />
+                  <div className="h-3 bg-foreground/5 rounded w-1/2" />
+                </div>
+              ))}
+            </div>
           ) : sessions.length === 0 ? (
-            <p className="text-sm text-muted-foreground">No active sessions</p>
+            <div className="flex flex-col items-center gap-2 py-6 text-muted-foreground">
+              <Monitor className="w-8 h-8 opacity-30" />
+              <p className="text-sm">No active sessions</p>
+            </div>
           ) : (
             <div className="space-y-3">
               {sessions.map((session) => (
                 <div
                   key={session.id}
-                  className="flex items-center justify-between rounded-lg border p-3"
+                  className="flex items-center justify-between rounded-lg border border-border p-3 hover:bg-muted/50 transition-colors"
                 >
                   <div className="space-y-1">
                     <div className="flex items-center gap-2">
@@ -195,7 +215,7 @@ export default function AccountPage() {
                         <Badge variant="default" className="text-xs">Current</Badge>
                       )}
                     </div>
-                    <div className="text-xs text-muted-foreground">
+                    <div className="text-xs text-muted-foreground font-mono">
                       {session.os} &middot; {session.ip}
                     </div>
                     <div className="text-xs text-muted-foreground">
@@ -220,9 +240,9 @@ export default function AccountPage() {
       </Card>
 
       <div className="flex gap-4">
-        <Link href="/send" className="inline-flex items-center justify-center rounded-lg border border-border bg-background h-8 px-2.5 text-sm font-medium hover:bg-muted hover:text-foreground">
+        <Button variant="outline" render={<Link href="/send" />}>
           Send a Note
-        </Link>
+        </Button>
         <Button variant="destructive" onClick={handleLogout}>Log Out</Button>
       </div>
     </div>

@@ -25,30 +25,34 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <html lang="en">
       <body className={`${urbanist.variable} ${openSans.variable} font-sans antialiased`}>
+        <a
+          href="#main-content"
+          className="sr-only focus:not-sr-only focus:fixed focus:top-4 focus:left-4 focus:z-[200] focus:rounded-lg focus:bg-foreground focus:px-4 focus:py-2 focus:text-sm focus:text-background focus:font-medium"
+        >
+          Skip to content
+        </a>
         <div className="min-h-screen relative">
           {/* Background */}
           <div className="absolute inset-0 grid-pattern" />
-          <div 
-            className="ambient-orb" 
-            style={{ 
-              width: "500px", 
-              height: "500px", 
-              background: "rgba(0,0,0,0.02)", 
-              top: "-100px", 
-              right: "-100px" 
-            }} 
+          <div
+            className="ambient-orb"
+            style={{
+              width: "500px",
+              height: "500px",
+              background: "rgba(0,0,0,0.02)",
+              top: "-100px",
+              right: "-100px",
+            }}
           />
-          
+
           <AuthProvider>
             <Navbar />
-            
-            <main className="relative z-10">
+
+            <main id="main-content" className="relative z-10">
               {children}
             </main>
           </AuthProvider>
         </div>
-
-
       </body>
     </html>
   );

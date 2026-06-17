@@ -21,13 +21,13 @@ export function HowItWorks() {
     <section className="section" id="how-it-works">
       <div className="max-w-content mx-auto px-6">
         <div className="text-center mb-16">
-          <div className="font-mono text-xs tracking-widest uppercase text-black/30 mb-4">
+          <div className="font-mono text-xs tracking-widest uppercase text-foreground/30 mb-4">
             Simple Process
           </div>
           <h2 className="font-ui text-4xl font-bold tracking-tight mb-4">
             Three steps to secure
           </h2>
-          <p className="text-black/50 max-w-md mx-auto">
+          <p className="text-foreground/50 max-w-md mx-auto">
             No signup, no account, no hassle. Just write, encrypt, and share.
           </p>
         </div>
@@ -38,11 +38,11 @@ export function HowItWorks() {
               key={step.number}
               className="glass glass-hover rounded-3xl p-8 transition-smooth text-center"
             >
-              <div className="w-14 h-14 rounded-2xl bg-black/5 flex items-center justify-center mx-auto mb-6">
-                <span className="font-ui text-2xl font-bold text-black/30">{step.number}</span>
+              <div className="w-14 h-14 rounded-2xl bg-foreground/5 flex items-center justify-center mx-auto mb-6">
+                <span className="font-ui text-2xl font-bold text-foreground/30">{step.number}</span>
               </div>
               <h3 className="font-ui font-semibold text-lg mb-3">{step.title}</h3>
-              <p className="text-sm text-black/50 leading-relaxed">{step.description}</p>
+              <p className="text-sm text-foreground/50 leading-relaxed">{step.description}</p>
             </div>
           ))}
         </div>

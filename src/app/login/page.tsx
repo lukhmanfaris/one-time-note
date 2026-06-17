@@ -49,16 +49,16 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="max-w-sm mx-auto px-4 py-12">
+    <div className="max-w-sm mx-auto px-4 pt-navbar pb-12">
       <Card>
         <CardHeader>
-          <CardTitle>Log In</CardTitle>
+          <CardTitle className="font-ui">Log In</CardTitle>
           <CardDescription>Sign in to your Revelio account</CardDescription>
         </CardHeader>
         <CardContent>
           <form onSubmit={handleSubmit} className="space-y-4">
             <div>
-              <label htmlFor="email" className="text-sm font-medium">Email</label>
+              <label htmlFor="email" className="text-sm font-medium mb-1.5 block">Email</label>
               <Input
                 id="email"
                 type="email"
@@ -70,7 +70,7 @@ export default function LoginPage() {
               />
             </div>
             <div>
-              <label htmlFor="password" className="text-sm font-medium">Password</label>
+              <label htmlFor="password" className="text-sm font-medium mb-1.5 block">Password</label>
               <Input
                 id="password"
                 type="password"
@@ -84,7 +84,7 @@ export default function LoginPage() {
             {TURNSTILE_SITE_KEY ? (
               <Turnstile ref={turnstileRef} siteKey={TURNSTILE_SITE_KEY} onSuccess={setTurnstileToken} onError={() => setTurnstileToken(null)} options={{ size: "normal" }} />
             ) : (
-              <p className="text-sm text-destructive">Bot verification isn’t configured. Set NEXT_PUBLIC_TURNSTILE_SITE_KEY and rebuild.</p>
+              <p className="text-sm text-destructive">Bot verification isn&apos;t configured. Set NEXT_PUBLIC_TURNSTILE_SITE_KEY and rebuild.</p>
             )}
             {error && <p className="text-sm text-destructive">{error}</p>}
             <Button type="submit" className="w-full" disabled={loading || !turnstileToken}>
@@ -96,7 +96,7 @@ export default function LoginPage() {
             <Link href="/signup" className="text-foreground underline">Sign up</Link>
           </div>
           <div className="mt-2 text-center text-sm">
-            <Link href="/reset" className="text-muted-foreground hover:text-foreground">Forgot your password?</Link>
+            <Link href="/reset" className="text-muted-foreground hover:text-foreground transition-smooth">Forgot your password?</Link>
           </div>
         </CardContent>
       </Card>

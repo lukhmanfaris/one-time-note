@@ -71,36 +71,42 @@ export default function ReceivePage() {
 
   const derivedStatusText = status === "loading"
     ? "Decrypting..."
-    : "DECRYPT & RETRIEVE";
+    : "Decrypt & Retrieve";
 
   return (
-    <div className="max-w-2xl mx-auto px-4 py-12">
-      <Link href="/" className="text-sm text-muted-foreground hover:text-foreground mb-8 inline-block">
+    <div className="max-w-2xl mx-auto px-4 pt-navbar pb-12">
+      <Link href="/" className="text-sm font-mono text-muted-foreground hover:text-foreground mb-8 inline-block transition-smooth">
         &larr; Back
       </Link>
 
-      <h1 className="text-2xl font-bold mb-2">Retrieve a Secret Note</h1>
+      <h1 className="font-ui text-2xl font-bold mb-2">Retrieve a Secret Note</h1>
       <p className="text-muted-foreground mb-8">
         Open the share link to auto-decrypt, or paste the encryption key manually.
       </p>
 
       <Card>
         <CardContent className="space-y-4 pt-6">
-          <Input
-            placeholder="Paste the encryption key from the share link"
-            value={manualKey}
-            onChange={(e) => setManualKey(e.target.value)}
-            disabled={status === "loading"}
-          />
+          <div>
+            <label htmlFor="manual-key" className="text-sm font-mono font-medium mb-1.5 block">
+              Encryption Key
+            </label>
+            <Input
+              id="manual-key"
+              placeholder="Paste the encryption key from the share link"
+              value={manualKey}
+              onChange={(e) => setManualKey(e.target.value)}
+              disabled={status === "loading"}
+            />
+          </div>
 
-          <Button onClick={handleManualDecrypt} disabled={status === "loading" || !manualKey.trim()} className="w-full">
+          <Button onClick={handleManualDecrypt} disabled={status === "loading" || !manualKey.trim()} className="w-full font-mono tracking-wider uppercase">
             {derivedStatusText}
           </Button>
 
           {error && <p className="text-sm text-destructive">{error}</p>}
 
           {status === "not_found" && (
-            <p className="text-sm text-destructive">
+            <p className="text-sm text-destructive font-mono">
               [NOT FOUND] Invalid key or the note has already been read.
             </p>
           )}

@@ -26,7 +26,7 @@ export function UseCases() {
     <section className="section">
       <div className="max-w-content mx-auto px-6">
         <div className="text-center mb-16">
-          <div className="font-mono text-xs tracking-widest uppercase text-black/30 mb-4">
+          <div className="font-mono text-xs tracking-widest uppercase text-foreground/30 mb-4">
             Use Cases
           </div>
           <h2 className="font-ui text-4xl font-bold tracking-tight mb-4">
@@ -40,11 +40,11 @@ export function UseCases() {
               key={caseItem.number}
               className="glass glass-hover rounded-2xl p-6 transition-smooth"
             >
-              <div className="font-mono text-xs tracking-wider text-black/30 mb-3">
+              <div className="font-mono text-xs tracking-wider text-foreground/30 mb-3">
                 {caseItem.number}
               </div>
               <h4 className="font-ui font-semibold text-sm mb-2">{caseItem.title}</h4>
-              <p className="text-xs text-black/50 leading-relaxed">{caseItem.description}</p>
+              <p className="text-xs text-foreground/50 leading-relaxed">{caseItem.description}</p>
             </div>
           ))}
         </div>

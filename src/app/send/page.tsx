@@ -7,6 +7,13 @@ import { Turnstile } from "@marsidev/react-turnstile";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent } from "@/components/ui/card";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { KeyDisplay } from "@/components/key-display";
 import { encryptNote, generateEncryptionKey, deriveLookupId, buildShareUrl } from "@/lib/crypto";
 import { createNote } from "@/lib/api";
@@ -69,12 +76,12 @@ export default function SendPage() {
   };
 
   return (
-    <div className="max-w-2xl mx-auto px-4 py-12">
-      <Link href="/" className="text-sm text-muted-foreground hover:text-foreground mb-8 inline-block">
+    <div className="max-w-2xl mx-auto px-4 pt-navbar pb-12">
+      <Link href="/" className="text-sm font-mono text-muted-foreground hover:text-foreground mb-8 inline-block transition-smooth">
         &larr; Back
       </Link>
 
-      <h1 className="text-2xl font-bold mb-2">Send a Secret Note</h1>
+      <h1 className="font-ui text-2xl font-bold mb-2">Send a Secret Note</h1>
       <p className="text-muted-foreground mb-8">
         Write a message. Select expiry. Get a unique link to share.
       </p>
@@ -90,32 +97,31 @@ export default function SendPage() {
           />
 
           <div className="flex items-center gap-4">
-            <label htmlFor="ttl" className="text-sm font-medium">
-              EXPIRES AFTER
+            <label htmlFor="ttl-trigger" className="text-sm font-mono font-medium tracking-wider uppercase shrink-0">
+              Expires After
             </label>
-            <select
-              id="ttl"
-              value={ttl}
-              onChange={(e) => setTtl(e.target.value)}
-              className="border rounded-md px-3 py-2 text-sm bg-background"
-              disabled={loading}
-            >
-              {Object.keys(TTL_OPTIONS).map((label) => (
-                <option key={label} value={label}>
-                  {label}
-                </option>
-              ))}
-            </select>
+            <Select value={ttl} onValueChange={setTtl} disabled={loading}>
+              <SelectTrigger id="ttl-trigger" className="w-40">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {Object.keys(TTL_OPTIONS).map((label) => (
+                  <SelectItem key={label} value={label}>
+                    {label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
 
           {TURNSTILE_SITE_KEY ? (
             <Turnstile ref={turnstileRef} siteKey={TURNSTILE_SITE_KEY} onSuccess={setTurnstileToken} onError={() => setTurnstileToken(null)} options={{ size: "normal" }} />
           ) : (
-            <p className="text-sm text-destructive">Bot verification isn’t configured. Set NEXT_PUBLIC_TURNSTILE_SITE_KEY and rebuild.</p>
+            <p className="text-sm text-destructive">Bot verification isn&apos;t configured. Set NEXT_PUBLIC_TURNSTILE_SITE_KEY and rebuild.</p>
           )}
 
-          <Button onClick={handleEncrypt} disabled={loading || !note.trim() || !turnstileToken} className="w-full">
-            {loading ? "Encrypting..." : "GENERATE LINK & ENCRYPT"}
+          <Button onClick={handleEncrypt} disabled={loading || !note.trim() || !turnstileToken} className="w-full font-mono tracking-wider uppercase">
+            {loading ? "Encrypting..." : "Generate Link & Encrypt"}
           </Button>
 
           {error && <p className="text-sm text-destructive">{error}</p>}

@@ -70,10 +70,10 @@ export default function ResetPage() {
   };
 
   return (
-    <div className="max-w-sm mx-auto px-4 py-12">
+    <div className="max-w-sm mx-auto px-4 pt-navbar pb-12">
       <Card>
         <CardHeader>
-          <CardTitle>Reset Password</CardTitle>
+          <CardTitle className="font-ui">Reset Password</CardTitle>
           <CardDescription>
             {step === "success" ? "Check your email" : "Enter your email to receive a reset link"}
           </CardDescription>
@@ -82,7 +82,7 @@ export default function ResetPage() {
           {step === "request" && (
             <form onSubmit={handleRequestReset} className="space-y-4">
               <div>
-                <label htmlFor="email" className="text-sm font-medium">Email</label>
+                <label htmlFor="email" className="text-sm font-medium mb-1.5 block">Email</label>
                 <Input
                   id="email"
                   type="email"
@@ -103,7 +103,7 @@ export default function ResetPage() {
           {step === "confirm" && (
             <form onSubmit={handleConfirmReset} className="space-y-4">
               <div>
-                <label htmlFor="new-password" className="text-sm font-medium">New Password</label>
+                <label htmlFor="new-password" className="text-sm font-medium mb-1.5 block">New Password</label>
                 <Input
                   id="new-password"
                   type="password"
@@ -116,7 +116,7 @@ export default function ResetPage() {
                 />
               </div>
               <div>
-                <label htmlFor="confirm-new-password" className="text-sm font-medium">Confirm New Password</label>
+                <label htmlFor="confirm-new-password" className="text-sm font-medium mb-1.5 block">Confirm New Password</label>
                 <Input
                   id="confirm-new-password"
                   type="password"
