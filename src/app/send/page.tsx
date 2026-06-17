@@ -100,7 +100,7 @@ export default function SendPage() {
             <label htmlFor="ttl-trigger" className="text-sm font-mono font-medium tracking-wider uppercase shrink-0">
               Expires After
             </label>
-            <Select value={ttl} onValueChange={setTtl} disabled={loading}>
+            <Select value={ttl} onValueChange={(value) => { if (value !== null) setTtl(value); }} disabled={loading}>
               <SelectTrigger id="ttl-trigger" className="w-40">
                 <SelectValue />
               </SelectTrigger>
